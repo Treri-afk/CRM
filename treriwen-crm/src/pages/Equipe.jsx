@@ -4,16 +4,15 @@ import {
   MoreHorizontal, Plus, Users, Award, Target
 } from 'lucide-react';
 import Topbar from '../components/layout/Topbar';
-import { teamMembers } from '../data/mockDataExtra';
+import NewMemberModal from '../components/ui/NewMemberModal';
+import { teamMembers as initialTeamMembers } from '../data/mockDataExtra';
 import './Equipe.css';
 
 const statusConfig = {
-  active: { label: 'Actif', color: 'var(--green)' },
-  vacation: { label: 'Congé', color: 'var(--yellow)' },
-  inactive: { label: 'Inactif', color: 'var(--text-muted)' },
+  active:   { label: 'Actif',    color: 'var(--green)'     },
+  vacation: { label: 'Congé',    color: 'var(--yellow)'    },
+  inactive: { label: 'Inactif',  color: 'var(--text-muted)'},
 };
-
-const departments = ['Tous', ...new Set(teamMembers.map(m => m.department))];
 
 function MemberCard({ member, onClick, selected }) {
   const status = statusConfig[member.status];
@@ -151,9 +150,17 @@ function MemberDetail({ member, onClose }) {
 }
 
 export default function Equipe() {
-  const [selectedDept, setSelectedDept] = useState('Tous');
+  const [teamMembers, setTeamMembers] = useState(initialTeamMembers);
+  const [selectedDept,   setSelectedDept]   = useState('Tous');
   const [selectedMember, setSelectedMember] = useState(null);
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode,       setViewMode]       = useState('grid');
+  const [showModal,      setShowModal]      = useState(false);
+
+  const departments = ['Tous', ...new Set(teamMembers.map(m => m.department))];
+
+  const handleSave = (newMember) => {
+    setTeamMembers(prev => [...prev, newMember]);
+  };
 
   const filtered = teamMembers.filter(m =>
     selectedDept === 'Tous' || m.department === selectedDept
@@ -197,7 +204,7 @@ export default function Equipe() {
               <p className="equipe-kpi-label">Deals au total</p>
             </div>
           </div>
-          <button className="equipe-invite-btn">
+          <button className="equipe-invite-btn" onClick={() => setShowModal(true)}>
             <Plus size={14} /> Inviter un membre
           </button>
         </div>
@@ -293,6 +300,13 @@ export default function Equipe() {
           )}
         </div>
       </div>
+
+      {showModal && (
+        <NewMemberModal
+          onClose={() => setShowModal(false)}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 }

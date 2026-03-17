@@ -4,10 +4,21 @@ import {
   LayoutDashboard, Users, TrendingUp, CheckSquare,
   Settings, ChevronRight, Zap, LogOut,
   FileText, Receipt, CalendarDays, BarChart3, UserCircle2,
-  RefreshCw, Youtube, Video, Camera, LucideHeartHandshake
+  RefreshCw, Youtube, Video, Camera, HeartHandshake,
+  Instagram, Twitter, Music2, Play
 } from 'lucide-react';
 import './Sidebar.css';
 
+/* ─── Icône custom TikTok (Lucide n'en a pas) ─────────────────────────────── */
+function TikTokIcon({ size = 16 }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M9 12a4 4 0 1 0 4 4V4a5 5 0 0 0 5 5" />
+    </svg>
+  );
+}
+
+/* ─── Items nav ───────────────────────────────────────────────────────────── */
 const navItems = [
   { to: '/',        icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/clients', icon: Users,           label: 'Clients'   },
@@ -17,9 +28,9 @@ const navItems = [
 ];
 
 const docItems = [
-  { to: '/devis',        icon: FileText,  label: 'Devis'        },
-  { to: '/factures',     icon: Receipt,   label: 'Factures'     },
-  { to: '/abonnements',  icon: RefreshCw, label: 'Abonnements'  },
+  { to: '/devis',       icon: FileText,  label: 'Devis'       },
+  { to: '/factures',    icon: Receipt,   label: 'Factures'    },
+  { to: '/abonnements', icon: RefreshCw, label: 'Abonnements' },
 ];
 
 const reportItems = [
@@ -28,16 +39,25 @@ const reportItems = [
 ];
 
 const contentItems = [
-  { to: '/content',               icon: Youtube,   label: 'Dashboard YouTube' },
-  { to: '/content/videos',        icon: Video,     label: 'Vidéos'           },
-  { to: '/content/equipment',     icon: Camera,    label: 'Matériel'         },
-  { to: '/content/partnerships',  icon: LucideHeartHandshake, label: 'Partenariats'     },
+  { to: '/content',              icon: Youtube,   label: 'Dashboard YouTube' },
+  { to: '/content/videos',       icon: Video,     label: 'Vidéos'           },
+  { to: '/content/equipment',    icon: Camera,    label: 'Matériel'         },
+  { to: '/content/partnerships', icon: HeartHandshake, label: 'Partenariats'     },
+];
+
+const socialItems = [
+  { to: '/social',                  icon: BarChart3,  label: 'Vue globale'    },
+  { to: '/social/instagram',        icon: Instagram,  label: 'Instagram'      },
+  { to: '/social/tiktok',           icon: TikTokIcon, label: 'TikTok'         },
+  { to: '/social/twitter',          icon: Twitter,    label: 'X / Twitter'    },
+  { to: '/social/youtube_shorts',   icon: Play,       label: 'YouTube Shorts' },
 ];
 
 const bottomItems = [
   { to: '/settings', icon: Settings, label: 'Paramètres' },
 ];
 
+/* ─── NavSection ──────────────────────────────────────────────────────────── */
 function NavSection({ label, items }) {
   return (
     <nav className="sidebar-nav">
@@ -46,7 +66,7 @@ function NavSection({ label, items }) {
         <NavLink
           key={to}
           to={to}
-          end={to === '/' || to === '/content'}
+          end={to === '/' || to === '/content' || to === '/social'}
           className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}
         >
           <Icon size={16} strokeWidth={1.8} />
@@ -58,9 +78,11 @@ function NavSection({ label, items }) {
   );
 }
 
+/* ─── Sidebar ─────────────────────────────────────────────────────────────── */
 export default function Sidebar() {
   return (
     <aside className="sidebar">
+
       {/* Logo */}
       <div className="sidebar-logo">
         <div className="logo-icon"><Zap size={16} strokeWidth={2.5} /></div>
@@ -71,17 +93,24 @@ export default function Sidebar() {
       <NavSection label="Documents"  items={docItems} />
       <NavSection label="Rapports"   items={reportItems} />
 
-      {/* Séparateur visuel section Contenu */}
+      {/* ── Séparateur Création de contenu ── */}
       <div className="sidebar-separator">
         <span>Création de contenu</span>
       </div>
 
       <NavSection label="YouTube & Contenu" items={contentItems} />
 
+      {/* ── Séparateur Réseaux sociaux ── */}
+      <div className="sidebar-separator">
+        <span>Réseaux sociaux</span>
+      </div>
+
+      <NavSection label="Plateformes" items={socialItems} />
+
       {/* Spacer */}
       <div className="sidebar-spacer" />
 
-      {/* Pipeline Mini Stats */}
+      {/* Pipeline widget */}
       <div className="sidebar-widget">
         <p className="widget-label">Pipeline ce mois</p>
         <p className="widget-value">415 000 €</p>
@@ -91,7 +120,7 @@ export default function Sidebar() {
         <p className="widget-sub">68% de l'objectif</p>
       </div>
 
-      {/* Bottom Nav */}
+      {/* Bottom nav */}
       <nav className="sidebar-nav bottom">
         {bottomItems.map(({ to, icon: Icon, label }) => (
           <NavLink
@@ -105,7 +134,7 @@ export default function Sidebar() {
         ))}
       </nav>
 
-      {/* User Profile */}
+      {/* User profile */}
       <div className="sidebar-profile">
         <div className="profile-avatar">JD</div>
         <div className="profile-info">
@@ -116,6 +145,7 @@ export default function Sidebar() {
           <LogOut size={14} />
         </button>
       </div>
+
     </aside>
   );
 }

@@ -5,12 +5,13 @@ import {
 } from 'recharts';
 import {
   RefreshCw, AlertTriangle, XCircle, CheckCircle2,
-  Plus, ChevronDown, ChevronUp, Calendar, Euro,
+  Plus, ChevronDown, ChevronUp, Calendar, DollarSign,
   TrendingUp, TrendingDown, Clock, MoreHorizontal,
   CreditCard, ArrowRight, Zap
 } from 'lucide-react';
 import Topbar from '../components/layout/Topbar';
-import { abonnements, mrrEvolution } from '../data/mockDataSubs';
+import NewSubscriptionModal from '../components/ui/NewSubscriptionModal';
+import { abonnements as initialAbonnements, mrrEvolution } from '../data/mockDataSubs';
 import './Abonnements.css';
 
 const statusConfig = {
@@ -265,8 +266,14 @@ const CustomTooltip = ({ active, payload, label }) => {
 };
 
 export default function Abonnements() {
+  const [abonnements, setAbonnements] = useState(initialAbonnements);
   const [filter, setFilter] = useState('all');
   const [selectedSub, setSelectedSub] = useState(null);
+  const [showModal, setShowModal] = useState(false);
+
+  const handleSave = (newSub) => {
+    setAbonnements(prev => [...prev, newSub]);
+  };
 
   const active = abonnements.filter(s => s.status === 'active');
   const atRisk = abonnements.filter(s => s.status === 'at_risk');
@@ -437,7 +444,7 @@ export default function Abonnements() {
               </button>
             ))}
           </div>
-          <button className="sub-new-btn">
+          <button className="sub-new-btn" onClick={() => setShowModal(true)}>
             <Plus size={14} /> Nouvel abonnement
           </button>
         </div>
@@ -463,6 +470,13 @@ export default function Abonnements() {
           )}
         </div>
       </div>
+
+      {showModal && (
+        <NewSubscriptionModal
+          onClose={() => setShowModal(false)}
+          onSave={handleSave}
+        />
+      )}
     </div>
   );
 }

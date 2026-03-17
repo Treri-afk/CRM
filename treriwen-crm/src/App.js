@@ -16,6 +16,8 @@ import ContentDashboard from './pages/ContentDashboard';
 import ContentVideos from './pages/ContentVideos';
 import ContentEquipment from './pages/ContentEquipment';
 import ContentPartnerships from './pages/ContentPartnerships';
+import SocialDashboard from './pages/SocialDashboard';
+import SocialNetworkPage from './pages/SocialNetworkPage';
 import './styles/globals.css';
 
 export default function App() {
@@ -23,23 +25,23 @@ export default function App() {
     <BrowserRouter>
       <Layout>
         <Routes>
-          {/* ── CRM ── */}
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/clients" element={<Clients />} />
-          <Route path="/deals" element={<Deals />} />
-          <Route path="/tasks" element={<Tasks />} />
-          <Route path="/devis" element={<Devis />} />
-          <Route path="/factures" element={<Factures />} />
-          <Route path="/abonnements" element={<Abonnements />} />
-          <Route path="/agenda" element={<Agenda />} />
-          <Route path="/analytics" element={<Analytics />} />
-          <Route path="/equipe" element={<Equipe />} />
-          <Route path="/settings" element={<Settings />} />
-          {/* ── CONTENU ── */}
-          <Route path="/content" element={<ContentDashboard />} />
-          <Route path="/content/videos" element={<ContentVideos />} />
-          <Route path="/content/equipment" element={<ContentEquipment />} />
+          <Route path="/"             element={<Dashboard />} />
+          <Route path="/clients"      element={<Clients />} />
+          <Route path="/deals"        element={<Deals />} />
+          <Route path="/tasks"        element={<Tasks />} />
+          <Route path="/devis"        element={<Devis />} />
+          <Route path="/factures"     element={<Factures />} />
+          <Route path="/abonnements"  element={<Abonnements />} />
+          <Route path="/agenda"       element={<Agenda />} />
+          <Route path="/analytics"    element={<Analytics />} />
+          <Route path="/equipe"       element={<Equipe />} />
+          <Route path="/settings"     element={<Settings />} />
+          <Route path="/content"              element={<ContentDashboard />} />
+          <Route path="/content/videos"       element={<ContentVideos />} />
+          <Route path="/content/equipment"    element={<ContentEquipment />} />
           <Route path="/content/partnerships" element={<ContentPartnerships />} />
+          <Route path="/social"          element={<SocialDashboard />} />
+          <Route path="/social/:network" element={<SocialNetworkPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>
