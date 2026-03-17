@@ -1,7 +1,6 @@
 {
   "name": "crm-app",
   "version": "1.0.0",
-  "homepage": "https://treri-adk.github.io/CRM",
   "private": true,
   "dependencies": {
     "lucide-react": "^0.294.0",
@@ -13,9 +12,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build",
-    "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "build": "react-scripts build"
   },
   "browserslist": {
     "production": [
@@ -29,6 +26,5 @@
     ]
   },
   "devDependencies": {
-    "gh-pages": "^6.3.0"
   }
 }
