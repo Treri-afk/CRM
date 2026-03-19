@@ -2,44 +2,121 @@ const express = require("express");
 const router = express.Router();
 const db = require("../config/db");
 
-// Récupérer tous les customers
+// GET all customers avec leurs deals et leur status
 router.get("/", (req, res) => {
   const sql = `
-    SELECT 
-      c.*,
-      cs.name AS status
-    FROM customers c
-    LEFT JOIN customer_status cs ON c.status_id = cs.id
+    SELECT customers.*, customer_status.name AS status_name,
+           deals.id AS deal_id, deals.title, deals.status AS deal_status_id,
+           deals.amount, deals.probability, deals.closing_date, deals.owner, deals.description, deals.created_at, deals.updated_at,
+           deal_status.name AS deal_status_name
+    FROM customers
+    LEFT JOIN customer_status ON customers.status_id = customer_status.id
+    LEFT JOIN deals ON deals.customer_id = customers.id
+    LEFT JOIN deal_status ON deals.status = deal_status.id
   `;
 
   db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
-    res.json(results);
+
+    const customersMap = {};
+    results.forEach(row => {
+      const customerId = row.id;
+
+      if (!customersMap[customerId]) {
+        customersMap[customerId] = {
+          ...row,
+          status: row.status_name, // nom du status du client
+          deals: []
+        };
+
+        // Supprimer les colonnes inutiles liées aux deals
+        delete customersMap[customerId].deal_id;
+        delete customersMap[customerId].title;
+        delete customersMap[customerId].deal_status_id;
+        delete customersMap[customerId].amount;
+        delete customersMap[customerId].probability;
+        delete customersMap[customerId].closing_date;
+        delete customersMap[customerId].owner;
+        delete customersMap[customerId].description;
+        delete customersMap[customerId].created_at;
+        delete customersMap[customerId].updated_at;
+        delete customersMap[customerId].status_name; // déjà copié dans status
+        delete customersMap[customerId].deal_status_name;
+      }
+
+      if (row.deal_id) {
+        customersMap[customerId].deals.push({
+          id: row.deal_id,
+          title: row.title,
+          status: row.deal_status_name, // nom du status du deal
+          amount: row.amount,
+          probability: row.probability,
+          closing_date: row.closing_date,
+          owner: row.owner,
+          description: row.description,
+          created_at: row.created_at,
+          updated_at: row.updated_at
+        });
+      }
+    });
+
+    res.json(Object.values(customersMap));
   });
 });
 
-// Récupérer un customer par ID
-router.get("/:customerId", (req, res) => {
-  const customerId = req.params.customerId;
+router.post("/", (req, res) => {
 
-  const sql = `
-    SELECT 
-      c.*,
-      cs.name AS status
-    FROM customers c
-    LEFT JOIN customer_status cs ON c.status_id = cs.id
-    WHERE c.id = ?
-  `;
+  const {
+    customer_name,
+    contact_name,
+    contact_email,
+    contact_phone,
+    legalForm,
+    siret,
+    rcsNumber,
+    industry,
+    status,
+    website,
+    lastContactDate
+  } = req.body;
 
-  db.query(sql, [customerId], (err, results) => {
-    if (err) return res.status(500).json(err);
+  // validation
+  if (!customer_name || !contact_name || !contact_email) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
 
-    if (results.length === 0) {
-      return res.status(404).json({ message: "Customer not found" });
+  const sql = `INSERT INTO customers 
+    (customer_name, contact_name, contact_email, contact_phone, legalForm, siret, rcsNumber, industry, status, website, lastContactDate, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+
+  db.query(
+    sql,
+    [
+      customer_name,
+      contact_name,
+      contact_email,
+      contact_phone,
+      legalForm,
+      siret,
+      rcsNumber,
+      industry,
+      status,
+      website,
+      lastContactDate
+    ],
+    (err, result) => {
+
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.status(201).json({
+        message: "Customer created",
+        id: result.insertId
+      });
     }
+  );
 
-    res.json(results[0]);
-  });
 });
 
 // Mettre à jour un customer (PUT)

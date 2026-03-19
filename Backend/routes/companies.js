@@ -42,6 +42,57 @@ router.get("/:id", (req, res) => {
 
 });
 
+//créer un nouveaux company
+router.post("/", (req, res) => {
+
+  const {
+    name,
+    email,
+    phone,
+    legalForm,
+    status,
+    siret,
+    address,
+    website
+  } = req.body;
+
+  // validation
+  if (!name || !email || !phone) {
+    return res.status(400).json({ message: "Missing required fields" });
+  }
+
+  const sql = `INSERT INTO companies 
+    (name, email, phone, legalForm, status, siret, address, website, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+
+  db.query(
+    sql,
+    [
+        name,
+        email,
+        phone,
+        legalForm,
+        status,
+        siret,
+        address,
+        website
+    ],
+    (err, result) => {
+
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.status(201).json({
+        message: "Company created",
+        id: result.insertId
+      });
+    }
+  );
+
+});
+
+
 //modifie entierement une company par son id
 router.put("/:id", (req, res) => {
 

@@ -379,7 +379,7 @@ export default function Clients() {
                 </div>
                 <div className="metric">
                   <p className="metric-label">Deals</p>
-                  <p className="metric-value">{selected.deals}</p>
+                  <p className="metric-value">{selected.deals.length}</p>
                 </div>
               </div>
 

@@ -35,18 +35,18 @@ export default function ClientDetailModal({ client, onClose }) {
   if (!client) return null;
 
   /* ── Données liées au client ── */
-  const clientDeals   = deals.filter(d => d.clientId === client.id);
+  const clientDeals   = client.deals
   const clientTasks   = tasks.filter(t => t.clientId === client.id);
   const clientDevis   = devisData?.filter(d => d.clientId === client.id) || [];
   const clientFactures = facturesData?.filter(f => f.clientId === client.id) || [];
   const clientSubs    = abonnements.filter(s => s.clientId === client.id);
 
   /* ── Calculs ── */
-  const totalDealValue   = clientDeals.reduce((s, d) => s + d.value, 0);
+  //const totalDealValue   = clientDeals.reduce((s, d) => s + d.value, 0);
   const wonDeals         = clientDeals.filter(d => d.stage === 'won');
   const openDeals        = clientDeals.filter(d => !['won', 'lost'].includes(d.stage));
   const wonValue         = wonDeals.reduce((s, d) => s + d.value, 0);
-  const avgDealValue     = clientDeals.length > 0 ? Math.round(totalDealValue / clientDeals.length) : 0;
+  //const avgDealValue     = clientDeals.length > 0 ? Math.round(totalDealValue / clientDeals.length) : 0;
   const winRate          = clientDeals.length > 0 ? Math.round((wonDeals.length / clientDeals.length) * 100) : 0;
   const totalFacture     = clientFactures.reduce((s, f) => s + f.items.reduce((ss, i) => ss + i.qty * i.price, 0) * 1.2, 0);
   const totalPaid        = clientFactures.filter(f => f.status === 'paid').reduce((s, f) => s + f.items.reduce((ss, i) => ss + i.qty * i.price, 0) * 1.2, 0);
@@ -78,24 +78,24 @@ export default function ClientDetailModal({ client, onClose }) {
             </div>
             <div>
               <div className="cdm-name-row">
-                <h2 className="cdm-name">{client.name}</h2>
+                <h2 className="cdm-name">{client.customer_name}</h2>
                 <Badge type={client.status} />
                 {clientMrr > 0 && (
                   <span className="cdm-mrr-tag">
-                    <RefreshCw size={10} /> {clientMrr.toLocaleString('fr-FR')} €/mois
+                    <RefreshCw size={10} /> {/*clientMrr.toLocaleString('fr-FR')*/} €/mois
                   </span>
                 )}
               </div>
               <div className="cdm-meta-row">
                 <span><Building2 size={11} /> {client.industry}</span>
-                {client.phone && <span><Phone size={11} /> {client.phone}</span>}
-                {client.email && <a href={`mailto:${client.email}`} className="cdm-meta-link"><Mail size={11} /> {client.email}</a>}
+                {client.contact_phone && <span><Phone size={11} /> {client.contact_phone}</span>}
+                {client.contact_email && <a href={`mailto:${client.contact_email}`} className="cdm-meta-link"><Mail size={11} /> {client.contact_email}</a>}
                 {client.website && <a href={client.website} target="_blank" rel="noopener noreferrer" className="cdm-meta-link"><Globe size={11} /> Site web</a>}
               </div>
             </div>
           </div>
           <div className="cdm-header-actions">
-            <a href={`mailto:${client.email}`} className="cdm-action-btn">
+            <a href={`mailto:${client.contact_email}`} className="cdm-action-btn">
               <Mail size={14} /> Email
             </a>
             <button className="cdm-close" onClick={onClose}><X size={16} /></button>
@@ -125,10 +125,10 @@ export default function ClientDetailModal({ client, onClose }) {
               {/* KPIs */}
               <div className="cdm-kpis">
                 {[
-                  { label: 'CA total',         value: `${(totalDealValue / 1000).toFixed(0)}k €`, color: '#3d7fff',  sub: `${wonDeals.length} deals gagnés` },
-                  { label: 'Facturé TTC',      value: `${totalFacture.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €`, color: '#2dd4a0', sub: totalUnpaid > 0 ? `${totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € impayé` : 'Tout payé' },
-                  { label: 'MRR',              value: clientMrr > 0 ? `${clientMrr.toLocaleString('fr-FR')} €` : '—', color: '#a78bfa', sub: clientMrr > 0 ? `ARR ${(clientMrr * 12 / 1000).toFixed(0)}k €` : 'Pas d\'abonnement' },
-                  { label: 'Taux de closing',  value: `${winRate}%`,   color: '#f5c842', sub: `${clientDeals.length} deals total` },
+                  //{ label: 'CA total',         value: `${(totalDealValue / 1000).toFixed(0)}k €`, color: '#3d7fff',  sub: `${wonDeals.length} deals gagnés` },
+                  { label: 'Facturé TTC',      value: `${/*totalFacture.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/ 4} €`, color: '#2dd4a0', sub: totalUnpaid > 0 ? `${totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € impayé` : 'Tout payé' },
+                  { label: 'MRR',              value: clientMrr > 0 ? `${/*clientMrr.toLocaleString('fr-FR')*/ 4} €` : '—', color: '#a78bfa', sub: clientMrr > 0 ? `ARR ${(clientMrr * 12 / 1000).toFixed(0)}k €` : 'Pas d\'abonnement' },
+                  //{ label: 'Taux de closing',  value: `${winRate}%`,   color: '#f5c842', sub: `${clientDeals.length} deals total` },
                 ].map(({ label, value, color, sub }) => (
                   <div key={label} className="cdm-kpi">
                     <p className="cdm-kpi-val mono" style={{ color }}>{value}</p>
@@ -150,7 +150,7 @@ export default function ClientDetailModal({ client, onClose }) {
                   {totalUnpaid > 0 && (
                     <div className="cdm-alert danger">
                       <AlertTriangle size={13} />
-                      <span>{totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € de factures impayées</span>
+                      <span>{/*totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/} € de factures impayées</span>
                     </div>
                   )}
                   {clientSubs.some(s => s.status === 'at_risk') && (
@@ -167,10 +167,10 @@ export default function ClientDetailModal({ client, onClose }) {
                 <div className="cdm-info-block">
                   <SectionTitle icon={Building2} label="Informations" />
                   <div className="cdm-info-rows">
-                    <div className="cdm-info-row"><span>Contact</span><span className="cdm-info-val">{client.contact}</span></div>
+                    <div className="cdm-info-row"><span>Contact</span><span className="cdm-info-val">{client.contact_name}</span></div>
                     <div className="cdm-info-row"><span>Secteur</span><span className="cdm-info-val">{client.industry}</span></div>
                     <div className="cdm-info-row"><span>Statut</span><Badge type={client.status} /></div>
-                    <div className="cdm-info-row"><span>Dernier contact</span><span className="cdm-info-val mono">{client.lastContact}</span></div>
+                    <div className="cdm-info-row"><span>Dernier contact</span><span className="cdm-info-val mono">{new Date(client.lastContactDate).toLocaleDateString('fr-FR')}</span></div>
                     {client.address && <div className="cdm-info-row"><span>Adresse</span><span className="cdm-info-val">{client.address}</span></div>}
                     {client.website && <div className="cdm-info-row"><span>Site web</span><a href={client.website} className="cdm-info-link">{client.website}</a></div>}
                   </div>
@@ -188,7 +188,7 @@ export default function ClientDetailModal({ client, onClose }) {
                           <p className="cdm-mini-deal-title">{d.title}</p>
                           <p className="cdm-mini-deal-meta">{d.closeDate}</p>
                         </div>
-                        <span className="cdm-mini-deal-value mono">{d.value.toLocaleString('fr-FR')} €</span>
+                        <span className="cdm-mini-deal-value mono">{/*d.value.toLocaleString('fr-FR')*/} €</span>
                         <span className="cdm-mini-deal-prob" style={{ color: d.probability >= 70 ? 'var(--green)' : 'var(--yellow)' }}>{d.probability}%</span>
                       </div>
                     ))
@@ -221,7 +221,7 @@ export default function ClientDetailModal({ client, onClose }) {
                 <SectionTitle icon={Activity} label="Activité récente" />
                 <div className="cdm-timeline-list">
                   {[
-                    ...clientDeals.slice(0, 2).map(d => ({ date: d.created, text: `Deal créé — ${d.title}`, type: 'deal', color: 'var(--accent)' })),
+                    //...clientDeals.slice(0, 2).map(d => ({ date: d.created, text: `Deal créé — ${d.title}`, type: 'deal', color: 'var(--accent)' })),
                     ...clientTasks.filter(t => t.status === 'done').slice(0, 2).map(t => ({ date: t.dueDate, text: `Tâche complétée — ${t.title}`, type: 'task', color: 'var(--green)' })),
                     ...clientFactures.slice(0, 1).map(f => ({ date: f.date, text: `Facture émise — ${f.id}`, type: 'invoice', color: 'var(--yellow)' })),
                   ]
@@ -250,8 +250,8 @@ export default function ClientDetailModal({ client, onClose }) {
             <div className="cdm-tab-content">
               <div className="cdm-tab-header">
                 <div className="cdm-tab-stats">
-                  <span className="cdm-tab-stat"><span className="mono" style={{ color: 'var(--green)' }}>{wonValue.toLocaleString('fr-FR')} €</span> gagnés</span>
-                  <span className="cdm-tab-stat"><span className="mono">{avgDealValue.toLocaleString('fr-FR')} €</span> deal moyen</span>
+                  <span className="cdm-tab-stat"><span className="mono" style={{ color: 'var(--green)' }}>{/*wonValue.toLocaleString('fr-FR')*/} €</span> gagnés</span>
+                  <span className="cdm-tab-stat"><span className="mono">{/*avgDealValue.toLocaleString('fr-FR')*/} €</span> deal moyen</span>
                   <span className="cdm-tab-stat"><span className="mono" style={{ color: 'var(--yellow)' }}>{winRate}%</span> win rate</span>
                 </div>
                 <button className="cdm-add-btn"><Plus size={13} /> Nouveau deal</button>
@@ -263,11 +263,11 @@ export default function ClientDetailModal({ client, onClose }) {
                     <div className="cdm-deal-stage-bar" style={{ background: d.stage === 'won' ? 'var(--green)' : d.stage === 'lost' ? 'var(--red)' : 'var(--accent)' }} />
                     <div className="cdm-deal-info">
                       <p className="cdm-deal-title">{d.title}</p>
-                      <p className="cdm-deal-meta">Clôture : <span className="mono">{d.closeDate}</span></p>
+                      <p className="cdm-deal-meta">Clôture : <span className="mono">{new Date(d.closing_date).toLocaleDateString('fr-FR')}</span></p>
                     </div>
                     <div className="cdm-deal-right">
-                      <p className="cdm-deal-value mono">{d.value.toLocaleString('fr-FR')} €</p>
-                      <Badge type={d.stage} />
+                      <p className="cdm-deal-value mono">{/*d.value.toLocaleString('fr-FR')*/} €</p>
+                      <Badge type={d.status} />
                     </div>
                     <div className="cdm-deal-proba">
                       <div className="cdm-deal-proba-bar">
@@ -301,7 +301,7 @@ export default function ClientDetailModal({ client, onClose }) {
                           <p className="cdm-doc-id mono">{d.id}</p>
                           <p className="cdm-doc-date">{d.date}</p>
                         </div>
-                        <span className="cdm-doc-amount mono">{ttc.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</span>
+                        <span className="cdm-doc-amount mono">{/*ttc.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/} €</span>
                         <span className={`cdm-doc-status ${d.status}`}>
                           {d.status === 'draft' ? 'Brouillon' : d.status === 'sent' ? 'Envoyé' : d.status === 'accepted' ? 'Accepté' : 'Refusé'}
                         </span>
@@ -329,7 +329,7 @@ export default function ClientDetailModal({ client, onClose }) {
                           <p className="cdm-doc-id mono">{f.id}</p>
                           <p className="cdm-doc-date">Échéance : <span className="mono">{f.dueDate}</span></p>
                         </div>
-                        <span className="cdm-doc-amount mono">{ttc.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</span>
+                        <span className="cdm-doc-amount mono">{/*ttc.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/} €</span>
                         <span className={`cdm-doc-status ${f.status}`}>
                           {f.status === 'paid' ? 'Payée' : f.status === 'sent' ? 'Envoyée' : f.status === 'overdue' ? 'En retard' : 'Brouillon'}
                         </span>
@@ -345,16 +345,16 @@ export default function ClientDetailModal({ client, onClose }) {
                 <div className="cdm-finance-summary">
                   <div className="cdm-finance-row">
                     <span>Total facturé TTC</span>
-                    <span className="mono">{totalFacture.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</span>
+                    <span className="mono">{/*totalFacture.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/} €</span>
                   </div>
                   <div className="cdm-finance-row">
                     <span>Encaissé</span>
-                    <span className="mono" style={{ color: 'var(--green)' }}>{totalPaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</span>
+                    <span className="mono" style={{ color: 'var(--green)' }}>{/*totalPaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/} €</span>
                   </div>
                   <div className="cdm-finance-row total">
                     <span>Reste à encaisser</span>
                     <span className="mono" style={{ color: totalUnpaid > 0 ? 'var(--red)' : 'var(--green)' }}>
-                      {totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €
+                      {/*totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/} €
                     </span>
                   </div>
                 </div>
@@ -403,11 +403,11 @@ export default function ClientDetailModal({ client, onClose }) {
               {clientMrr > 0 && (
                 <div className="cdm-sub-kpis">
                   <div className="cdm-sub-kpi">
-                    <p className="cdm-sub-kpi-val mono" style={{ color: 'var(--green)' }}>{clientMrr.toLocaleString('fr-FR')} €</p>
+                    <p className="cdm-sub-kpi-val mono" style={{ color: 'var(--green)' }}>{/*clientMrr.toLocaleString('fr-FR')*/} €</p>
                     <p className="cdm-sub-kpi-label">MRR</p>
                   </div>
                   <div className="cdm-sub-kpi">
-                    <p className="cdm-sub-kpi-val mono">{(clientMrr * 12).toLocaleString('fr-FR')} €</p>
+                    <p className="cdm-sub-kpi-val mono">{/*(clientMrr * 12).toLocaleString('fr-FR')*/} €</p>
                     <p className="cdm-sub-kpi-label">ARR</p>
                   </div>
                   <div className="cdm-sub-kpi">
@@ -431,7 +431,7 @@ export default function ClientDetailModal({ client, onClose }) {
                         {s.renewalDate && <p className="cdm-sub-renew mono">Renouvellement : {s.renewalDate}</p>}
                       </div>
                       <div className="cdm-sub-right">
-                        <p className="cdm-sub-mrr mono">{s.monthlyCost.toLocaleString('fr-FR')} €<span>/mois</span></p>
+                        <p className="cdm-sub-mrr mono">{/*s.monthlyCost.toLocaleString('fr-FR')*/} €<span>/mois</span></p>
                         <span className="cdm-sub-status" style={{ color: statusColor, background: statusColor + '18' }}>{statusLabel}</span>
                       </div>
                     </div>
@@ -447,7 +447,7 @@ export default function ClientDetailModal({ client, onClose }) {
         <div className="cdm-footer">
           <div className="cdm-footer-info">
             <span className="cdm-footer-id mono">ID #{client.id}</span>
-            <span>Dernier contact : <span className="mono">{client.lastContact}</span></span>
+            <span>Dernier contact : <span className="mono">{new Date(client.lastContactDate).toLocaleDateString('fr-FR')}</span></span>
           </div>
           <button className="cdm-footer-close" onClick={onClose}>Fermer</button>
         </div>
