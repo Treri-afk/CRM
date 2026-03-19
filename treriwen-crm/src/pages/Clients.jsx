@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Search, Filter, Plus, Mail, Phone,
   MoreHorizontal, ArrowUpDown, Building2, ExternalLink,
@@ -7,8 +7,10 @@ import {
 import Topbar from '../components/layout/Topbar';
 import Badge from '../components/ui/Badge';
 import ClientDetailModal from '../components/ui/ClientDetailModal';
-import { clients } from '../data/mockData';
+import { getAllCustomers } from '../api/customers'
+//import { clients } from '../data/mockData';
 import './Clients.css';
+import { getStatusCustomers } from '../api/status';
 
 const INDUSTRIES = ['SaaS', 'Marketing', 'Manufacturing', 'Consulting', 'Finance', 'Design', 'Tech', 'E-commerce', 'Santé', 'Éducation', 'Immobilier', 'Autre'];
 const COLORS = ['#3d7fff', '#a78bfa', '#2dd4a0', '#f5c842', '#fb923c', '#ff4d6a'];
@@ -199,23 +201,44 @@ function NewClientModal({ onClose, onSave }) {
 }
 
 export default function Clients() {
-  const [clientList, setClientList] = useState(clients);
+  const [clientList, setClientList] = useState([]);
+  const [statusList, setStatusList] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
+  const [filterStatus, setFilterStatus] = useState({ id: 0, name: 'all' });
   const [activeClient, setActiveClient] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [detailClient, setDetailClient] = useState(null);
 
-  const filtered = clientList
-    .filter(c => filterStatus === 'all' || c.status === filterStatus)
-    .filter(c =>
-      c.name.toLowerCase().includes(search.toLowerCase()) ||
-      c.contact.toLowerCase().includes(search.toLowerCase()) ||
-      c.email.toLowerCase().includes(search.toLowerCase())
-    );
+  useEffect(() => {
+    const fetchClients = async () => {
+      try {
+        setLoading(true);
+        const customers = await getAllCustomers(); // ta fonction async
+        const status = await getStatusCustomers();
+        setStatusList([{ id: 0, name: 'all' }, ...status]);
+        setClientList(customers);
+      } catch (err) {
+        console.error('Erreur lors du chargement des clients', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchClients();
+  }, []);
+ 
+  const filtered = clientList.filter(c => filterStatus.name === 'all' || c.status === filterStatus.name)
+    //.filter(c =>
+    //  c.name.toLowerCase().includes(search.toLowerCase()) ||
+    //  c.contact.toLowerCase().includes(search.toLowerCase()) ||
+    //  c.email.toLowerCase().includes(search.toLowerCase())
+    //);
 
+  clientList.forEach(element => {
+    console.log(filterStatus)
+  });
   const selected = activeClient ? clientList.find(c => c.id === activeClient) : null;
-
+  console.log("selected : "+selected)
   const handleSave = (newClient) => {
     setClientList(prev => [...prev, newClient]);
   };
@@ -237,13 +260,13 @@ export default function Clients() {
           </div>
 
           <div className="filter-tabs">
-            {['all', 'active', 'prospect', 'inactive'].map(s => (
+            {statusList.map(s => (
               <button
                 key={s}
-                className={`filter-tab ${filterStatus === s ? 'active' : ''}`}
+                className={`filter-tab ${filterStatus?.id === s.id ? 'active' : ''}`}
                 onClick={() => setFilterStatus(s)}
               >
-                {s === 'all' ? 'Tous' : s === 'active' ? 'Actifs' : s === 'prospect' ? 'Prospects' : 'Inactifs'}
+                {s["name"]}
               </button>
             ))}
           </div>
@@ -283,23 +306,23 @@ export default function Clients() {
                     <td>
                       <div className="client-name-cell">
                         <div className="client-avatar" style={{ background: client.color + '22', color: client.color }}>
-                          {client.avatar}
+                          {/*client.avatar*/}
                         </div>
                         <div>
-                          <p className="client-name">{client.name}</p>
-                          <p className="client-email">{client.email}</p>
+                          <p className="client-name">{client.customer_name}</p>
+                          <p className="client-email">{client.contact_mail}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="client-contact">{client.contact}</td>
+                    <td className="client-contact">{client.contact_name}</td>
                     <td><Badge type={client.status} /></td>
                     <td>
                       <span className="client-industry">
                         <Building2 size={11} /> {client.industry}
                       </span>
                     </td>
-                    <td className="mono client-value">{client.value.toLocaleString('fr-FR')} €</td>
-                    <td className="client-date">{client.lastContact}</td>
+                    <td className="mono client-value">{/*client.value.toLocaleString('fr-FR')*/} €</td>
+                    <td className="client-date">{new Date(client.lastContactDate).toLocaleDateString('fr-FR')}</td>
                     <td>
                       <div className="row-actions-group" onClick={e => e.stopPropagation()}>
                         <button
@@ -329,10 +352,10 @@ export default function Clients() {
             <div className="client-detail fade-in">
               <div className="detail-header">
                 <div className="detail-avatar" style={{ background: selected.color + '22', color: selected.color }}>
-                  {selected.avatar}
+                  {/*selected.avatar*/}
                 </div>
                 <div className="detail-title">
-                  <h3>{selected.name}</h3>
+                  <h3>{selected.customer_name}</h3>
                   <p>{selected.industry}</p>
                 </div>
                 <button className="detail-external"><ExternalLink size={13} /></button>
@@ -342,17 +365,17 @@ export default function Clients() {
 
               <div className="detail-section">
                 <p className="detail-section-label">Contact principal</p>
-                <p className="detail-contact-name">{selected.contact}</p>
+                <p className="detail-contact-name">{selected.contact_name}</p>
                 <div className="detail-contact-links">
-                  <a href={`mailto:${selected.email}`} className="contact-link"><Mail size={12} /> {selected.email}</a>
-                  <a href={`tel:${selected.phone}`} className="contact-link"><Phone size={12} /> {selected.phone}</a>
+                  <a href={`mailto:${selected.contact_email}`} className="contact-link"><Mail size={12} /> {selected.contact_email}</a>
+                  <a href={`tel:${selected.contact_phone}`} className="contact-link"><Phone size={12} /> {selected.contact_phone}</a>
                 </div>
               </div>
 
               <div className="detail-metrics">
                 <div className="metric">
                   <p className="metric-label">Valeur totale</p>
-                  <p className="metric-value mono">{selected.value.toLocaleString('fr-FR')} €</p>
+                  <p className="metric-value mono">{/*selected.value.toLocaleString('fr-FR')*/} €</p>
                 </div>
                 <div className="metric">
                   <p className="metric-label">Deals</p>
@@ -362,7 +385,7 @@ export default function Clients() {
 
               <div className="detail-section">
                 <p className="detail-section-label">Dernier contact</p>
-                <p className="detail-value">{selected.lastContact}</p>
+                <p className="detail-value">{new Date(selected.lastContactDate).toLocaleDateString('fr-FR')}</p>
               </div>
 
               <div className="detail-actions">

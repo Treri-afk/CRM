@@ -3,7 +3,8 @@ const router = express.Router();
 const db = require("../config/db");
 
 router.post("/", (req, res) => {
-   const {
+
+  const {
     firstName,
     lastName,
     email,
@@ -12,26 +13,31 @@ router.post("/", (req, res) => {
     address,
   } = req.body;
 
-  const sql = `UPDATE users 
-              SET firstName = ?,
-              lastName = ?, 
-              email = ?,
-              phone = ?,
-              company_id = ?,
-              address = ?,
-              date_creation = NOW,
-              date_update = NOW() WHERE id = ?`;
+  // validation
+  if (!firstName || !lastName || !email || !phone || !company_id || !address) {
+    return res.status(400).json({ message: "All fields are required" });
+  }
 
-  db.query(sql, [firstName, lastName, email,phone,company_id,address], (err, result) => {
-    if (err) {
-      return res.status(500).json(err);
+  const sql = `INSERT INTO users 
+    (firstName, lastName, email, phone, company_id, address, date_creation, date_update)
+    VALUES (?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+
+  db.query(
+    sql,
+    [firstName, lastName, email, phone, company_id, address],
+    (err, result) => {
+
+      if (err) {
+        return res.status(500).json(err);
+      }
+
+      res.status(201).json({
+        message: "User created",
+        id: result.insertId
+      });
     }
+  );
 
-    res.json({
-      message: "User created",
-      id: result.insertId
-    });
-  });
 });
 
 module.exports = router;

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Search, Bell, Plus, Command } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
+import NotificationBell from '../ui/NotificationBell';
 import './Topbar.css';
 
 export default function Topbar({ title, subtitle }) {
@@ -15,7 +16,6 @@ export default function Topbar({ title, subtitle }) {
       </div>
 
       <div className="topbar-right">
-        {/* Search */}
         <div className={`search-box ${searchFocused ? 'focused' : ''}`}>
           <Search size={14} className="search-icon" />
           <input
@@ -25,18 +25,11 @@ export default function Topbar({ title, subtitle }) {
             onFocus={() => setSearchFocused(true)}
             onBlur={() => setSearchFocused(false)}
           />
-          <kbd className="search-kbd">
-            <Command size={10} /> K
-          </kbd>
+          <kbd className="search-kbd">⌘ K</kbd>
         </div>
 
-        {/* Notifications */}
-        <button className="topbar-btn notif-btn">
-          <Bell size={16} />
-          <span className="notif-dot" />
-        </button>
+        <NotificationBell />
 
-        {/* Quick Add */}
         <button className="topbar-cta">
           <Plus size={15} strokeWidth={2.5} />
           <span>Nouveau</span>

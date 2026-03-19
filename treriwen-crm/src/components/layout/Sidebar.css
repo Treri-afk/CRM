@@ -13,6 +13,33 @@
   overflow: hidden;
 }
 
+/* Zone scrollable — tout entre le logo et le footer */
+.sidebar-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-soft) transparent;
+  min-height: 0;
+}
+
+.sidebar-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb {
+  background: var(--border-soft);
+  border-radius: 2px;
+}
+
+.sidebar-scroll::-webkit-scrollbar-thumb:hover {
+  background: var(--border-bright);
+}
+
 /* Logo */
 .sidebar-logo {
   display: flex;
@@ -232,4 +259,263 @@
   text-transform: uppercase;
   color: var(--text-muted);
   white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   RESPONSIVE SIDEBAR
+═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Burger button (mobile only) ─────────────────────────────────────────── */
+.sidebar-burger {
+  display: none;
+  flex-direction: column;
+  gap: 5px;
+  padding: 10px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  position: fixed;
+  top: 14px;
+  left: 14px;
+  z-index: 200;
+  border-radius: 8px;
+  transition: background var(--transition);
+}
+
+.sidebar-burger:hover { background: var(--bg-elevated); }
+
+.sidebar-burger span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: var(--text-secondary);
+  border-radius: 2px;
+  transition: all 0.3s ease;
+}
+
+/* ─── Overlay (mobile) ────────────────────────────────────────────────────── */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 14, 0.7);
+  backdrop-filter: blur(4px);
+  z-index: 149;
+}
+
+/* ─── Tablet (≤ 1024px) — sidebar réduite en icônes ──────────────────────── */
+@media (max-width: 1024px) {
+  :root {
+    --sidebar-width: 64px;
+  }
+
+  .sidebar {
+    width: 64px;
+    overflow: visible;
+  }
+
+  /* Masquer les textes */
+  .logo-text,
+  .nav-section-label,
+  .nav-item span,
+  .nav-arrow,
+  .sidebar-widget,
+  .profile-info,
+  .profile-logout,
+  .sidebar-separator span,
+  .widget-label,
+  .widget-value,
+  .widget-bar,
+  .widget-sub {
+    display: none;
+  }
+
+  /* Recentrer le logo */
+  .sidebar-logo {
+    justify-content: center;
+    padding: 18px 0;
+  }
+
+  /* Recentrer les items nav */
+  .nav-item {
+    justify-content: center;
+    padding: 10px 0;
+    border-radius: 10px;
+    margin: 2px 8px;
+  }
+
+  /* Tooltip au survol */
+  .nav-item {
+    position: relative;
+  }
+
+  .nav-item::after {
+    content: attr(data-label);
+    position: absolute;
+    left: calc(100% + 10px);
+    top: 50%;
+    transform: translateY(-50%);
+    background: var(--bg-elevated);
+    border: 1px solid var(--border-soft);
+    color: var(--text-primary);
+    font-size: 12px;
+    font-weight: 500;
+    padding: 5px 10px;
+    border-radius: 7px;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    z-index: 999;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+    font-family: var(--font-display);
+  }
+
+  .nav-item:hover::after {
+    opacity: 1;
+  }
+
+  /* Séparateur réduit */
+  .sidebar-separator {
+    padding: 10px 0 4px;
+    justify-content: center;
+  }
+
+  .sidebar-separator::before,
+  .sidebar-separator::after {
+    display: none;
+  }
+
+  /* Profile réduit */
+  .sidebar-profile {
+    justify-content: center;
+    padding: 12px 0;
+  }
+
+  .profile-avatar {
+    margin: 0;
+  }
+
+  .sidebar-spacer { flex: 1; }
+
+  /* Nav sections compactes */
+  .sidebar-nav {
+    padding: 8px 0;
+  }
+
+  .sidebar-nav.bottom {
+    padding: 4px 0;
+  }
+}
+
+/* ─── Mobile (≤ 768px) — sidebar cachée, s'ouvre en overlay ──────────────── */
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+  }
+
+  .sidebar-burger {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: block;
+  }
+
+  .sidebar {
+    width: 260px;
+    transform: translateX(-100%);
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 150;
+    box-shadow: none;
+  }
+
+  .sidebar.sidebar-open {
+    transform: translateX(0);
+    box-shadow: 4px 0 40px rgba(0, 0, 0, 0.5);
+  }
+
+  /* Restaurer les textes sur mobile (sidebar en plein écran) */
+  .sidebar.sidebar-open .logo-text,
+  .sidebar.sidebar-open .nav-section-label,
+  .sidebar.sidebar-open .nav-item span,
+  .sidebar.sidebar-open .nav-arrow,
+  .sidebar.sidebar-open .sidebar-widget,
+  .sidebar.sidebar-open .profile-info,
+  .sidebar.sidebar-open .sidebar-separator span {
+    display: block;
+  }
+
+  .sidebar.sidebar-open .sidebar-separator {
+    padding: 12px 20px 6px;
+    justify-content: initial;
+  }
+
+  .sidebar.sidebar-open .sidebar-separator::before,
+  .sidebar.sidebar-open .sidebar-separator::after {
+    display: block;
+  }
+
+  .sidebar.sidebar-open .sidebar-logo {
+    justify-content: initial;
+    padding: 20px 20px 16px;
+  }
+
+  .sidebar.sidebar-open .nav-item {
+    justify-content: initial;
+    padding: 9px 12px;
+    margin: 2px 0;
+    border-radius: 8px;
+  }
+
+  .sidebar.sidebar-open .sidebar-profile {
+    justify-content: initial;
+    padding: 14px 16px;
+  }
+
+  .sidebar.sidebar-open .profile-info { display: flex; }
+  .sidebar.sidebar-open .profile-logout { display: flex; }
+
+  .sidebar.sidebar-open .sidebar-nav {
+    padding: 16px 12px 8px;
+  }
+
+  /* Cacher tooltip sur mobile */
+  .nav-item::after { display: none; }
+
+  /* Layout main prend toute la largeur */
+  .layout-main {
+    margin-left: 0 !important;
+    padding-top: 56px;
+  }
+}
+
+/* ─── Burger visible > 768px ── */
+@media (min-width: 769px) {
+  .sidebar-burger { display: none; }
+  .sidebar-overlay { display: none; }
+}
+
+/* ─── Scroll zone adjustments responsive ───────────────────────────────────── */
+@media (max-width: 1024px) {
+  .sidebar-scroll {
+    overflow-y: auto;
+    overflow-x: visible; /* pour les tooltips */
+  }
+
+  /* Cacher le widget pipeline en mode icônes */
+  .sidebar-scroll .sidebar-widget {
+    display: none;
+  }
+}
+
+@media (max-width: 768px) {
+  /* Sur mobile, restaurer le widget dans la sidebar ouverte */
+  .sidebar.sidebar-open .sidebar-scroll .sidebar-widget {
+    display: block;
+  }
+
+  .sidebar.sidebar-open .sidebar-scroll {
+    overflow-x: hidden;
+  }
 }
