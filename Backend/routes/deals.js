@@ -4,7 +4,13 @@ const db = require("../config/db");
 
 // GET all deals
 router.get("/", (req, res) => {
-  db.query("SELECT * FROM deals", (err, results) => {
+  const sql = `
+    SELECT deals.*, deal_status.name AS status_name
+    FROM deals
+    LEFT JOIN deal_status ON deals.status = deal_status.id
+  `;
+
+  db.query(sql, (err, results) => {
     if (err) return res.status(500).json(err);
     res.json(results);
   });
@@ -13,9 +19,19 @@ router.get("/", (req, res) => {
 // GET deal by ID
 router.get("/:dealId", (req, res) => {
   const { dealId } = req.params;
-  db.query("SELECT * FROM deals WHERE id = ?", [dealId], (err, results) => {
+
+  const sql = `
+    SELECT deals.*, deal_status.name AS status_name
+    FROM deals
+    LEFT JOIN deal_status ON deals.status = deal_status.id
+    WHERE deals.id = ?
+  `;
+
+  db.query(sql, [dealId], (err, results) => {
     if (err) return res.status(500).json(err);
-    if (results.length === 0) return res.status(404).json({ message: "Deal not found" });
+    if (results.length === 0) {
+      return res.status(404).json({ message: "Deal not found" });
+    }
     res.json(results[0]);
   });
 });

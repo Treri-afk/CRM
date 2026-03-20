@@ -233,12 +233,7 @@ export default function Clients() {
     //  c.contact.toLowerCase().includes(search.toLowerCase()) ||
     //  c.email.toLowerCase().includes(search.toLowerCase())
     //);
-
-  clientList.forEach(element => {
-    console.log(filterStatus)
-  });
   const selected = activeClient ? clientList.find(c => c.id === activeClient) : null;
-  console.log("selected : "+selected)
   const handleSave = (newClient) => {
     setClientList(prev => [...prev, newClient]);
   };
@@ -321,7 +316,11 @@ export default function Clients() {
                         <Building2 size={11} /> {client.industry}
                       </span>
                     </td>
-                    <td className="mono client-value">{/*client.value.toLocaleString('fr-FR')*/} €</td>
+                  <td className="mono client-value">
+                    {(client.deals || [])
+                      .reduce((sum, deal) => sum + Number(deal.amount || 0), 0)
+                      .toLocaleString('fr-FR')} €
+                  </td>
                     <td className="client-date">{new Date(client.lastContactDate).toLocaleDateString('fr-FR')}</td>
                     <td>
                       <div className="row-actions-group" onClick={e => e.stopPropagation()}>
@@ -375,7 +374,9 @@ export default function Clients() {
               <div className="detail-metrics">
                 <div className="metric">
                   <p className="metric-label">Valeur totale</p>
-                  <p className="metric-value mono">{/*selected.value.toLocaleString('fr-FR')*/} €</p>
+                  <p className="metric-value mono">{(selected.deals || [])
+                      .reduce((sum, deal) => sum + Number(deal.amount || 0), 0)
+                      .toLocaleString('fr-FR')} €</p>
                 </div>
                 <div className="metric">
                   <p className="metric-label">Deals</p>
