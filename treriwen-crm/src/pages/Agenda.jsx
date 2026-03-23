@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronLeft, ChevronRight, Plus, Clock,
   MapPin, Users, Video, Phone, Calendar
@@ -7,6 +7,7 @@ import Topbar from '../components/layout/Topbar';
 import AddEventModal from '../components/ui/AddEventModal';
 import { calendarEvents as initialEvents } from '../data/mockDataExtra';
 import './Agenda.css';
+import { getCalendars } from '../api/calendars';
 
 const DAYS = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
 const MONTHS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
@@ -37,6 +38,30 @@ export default function Agenda() {
   const [view, setView] = useState('month');
   const [events, setEvents] = useState(initialEvents);
   const [modalOpen, setModalOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+      const fetchDeals = async () => {
+        try {
+          setLoading(true);
+          const rawEvents = await getCalendars();
+          const normalized = rawEvents.map(e => ({
+            ...e,
+            date: new Date(e.event_date).toLocaleDateString('fr-CA'),
+            time: e.event_time.slice(0,5),
+            type: ['meeting','call','demo','internal','training','negotiation'][e.type_id - 1],
+            color: e.color,                  // déjà retourné par le JOIN calendar_type
+          }));
+          setEvents(normalized);
+          console.log(normalized)
+        } catch (err) {
+          console.error('Erreur lors du chargement des clients', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDeals();
+    }, []);
 
   const handleSaveEvent = (newEvent) => {
     setEvents(prev => [...prev, newEvent]);
@@ -192,6 +217,7 @@ export default function Agenda() {
                     const isToday = cell.dateStr === today.toISOString().slice(0, 10);
                     const isSelected = cell.dateStr === selectedDate;
                     const dayEvents = getEventsForDate(cell.dateStr);
+                 
                     return (
                       <div
                         key={cell.dateStr}
@@ -199,14 +225,14 @@ export default function Agenda() {
                         onClick={() => setSelectedDate(cell.dateStr)}
                       >
                         <span className="month-cell-num">{cell.day}</span>
-                        <div className="month-cell-events">
+                        <div className="month-cell-events">{}
                           {dayEvents.slice(0, 2).map(ev => (
                             <div
                               key={ev.id}
                               className="month-event-pill"
                               style={{ background: ev.color + '22', color: ev.color, borderColor: ev.color + '44' }}
                             >
-                              {ev.time} {ev.title}
+                              {ev.date} {ev.title}
                             </div>
                           ))}
                           {dayEvents.length > 2 && (
@@ -262,7 +288,7 @@ export default function Agenda() {
                                 }}
                               >
                                 <p className="week-event-title">{ev.title}</p>
-                                <p className="week-event-time mono">{ev.time} · {ev.duration}min</p>
+                                <p className="week-event-time mono">{ev.date} · {ev.duration}min</p>
                               </div>
                             ))}
                           </div>

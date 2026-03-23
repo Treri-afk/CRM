@@ -42,11 +42,11 @@ export default function ClientDetailModal({ client, onClose }) {
   const clientSubs    = abonnements.filter(s => s.clientId === client.id);
 
   /* ── Calculs ── */
-  //const totalDealValue   = clientDeals.reduce((s, d) => s + d.value, 0);
+  const totalDealValue   = clientDeals.reduce((s, d) => s + Number(d.amount), 0);
   const wonDeals         = clientDeals.filter(d => d.stage === 'won');
   const openDeals        = clientDeals.filter(d => !['won', 'lost'].includes(d.stage));
   const wonValue         = wonDeals.reduce((s, d) => s + d.value, 0);
-  //const avgDealValue     = clientDeals.length > 0 ? Math.round(totalDealValue / clientDeals.length) : 0;
+  const avgDealValue     = clientDeals.length > 0 ? Math.round(totalDealValue / clientDeals.length) : 0;
   const winRate          = clientDeals.length > 0 ? Math.round((wonDeals.length / clientDeals.length) * 100) : 0;
   const totalFacture     = clientFactures.reduce((s, f) => s + f.items.reduce((ss, i) => ss + i.qty * i.price, 0) * 1.2, 0);
   const totalPaid        = clientFactures.filter(f => f.status === 'paid').reduce((s, f) => s + f.items.reduce((ss, i) => ss + i.qty * i.price, 0) * 1.2, 0);
@@ -125,10 +125,10 @@ export default function ClientDetailModal({ client, onClose }) {
               {/* KPIs */}
               <div className="cdm-kpis">
                 {[
-                  //{ label: 'CA total',         value: `${(totalDealValue / 1000).toFixed(0)}k €`, color: '#3d7fff',  sub: `${wonDeals.length} deals gagnés` },
-                  { label: 'Facturé TTC',      value: `${/*totalFacture.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/ 4} €`, color: '#2dd4a0', sub: totalUnpaid > 0 ? `${totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € impayé` : 'Tout payé' },
-                  { label: 'MRR',              value: clientMrr > 0 ? `${/*clientMrr.toLocaleString('fr-FR')*/ 4} €` : '—', color: '#a78bfa', sub: clientMrr > 0 ? `ARR ${(clientMrr * 12 / 1000).toFixed(0)}k €` : 'Pas d\'abonnement' },
-                  //{ label: 'Taux de closing',  value: `${winRate}%`,   color: '#f5c842', sub: `${clientDeals.length} deals total` },
+                  { label: 'CA total',         value: `${(totalDealValue / 1000).toFixed(0)}k €`, color: '#3d7fff',  sub: `${wonDeals.length} deals gagnés` },
+                  { label: 'Facturé TTC',      value: `${/*totalFacture.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/4} €`, color: '#2dd4a0', sub: totalUnpaid > 0 ? `${totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € impayé` : 'Tout payé' },
+                  { label: 'MRR',              value: clientMrr > 0 ? `${/*clientMrr.toLocaleString('fr-FR')*/0} €` : '—', color: '#a78bfa', sub: clientMrr > 0 ? `ARR ${(clientMrr * 12 / 1000).toFixed(0)}k €` : 'Pas d\'abonnement' },
+                  { label: 'Taux de closing',  value: `${winRate}%`,   color: '#f5c842', sub: `${clientDeals.length} deals total` },
                 ].map(({ label, value, color, sub }) => (
                   <div key={label} className="cdm-kpi">
                     <p className="cdm-kpi-val mono" style={{ color }}>{value}</p>
@@ -150,7 +150,7 @@ export default function ClientDetailModal({ client, onClose }) {
                   {totalUnpaid > 0 && (
                     <div className="cdm-alert danger">
                       <AlertTriangle size={13} />
-                      <span>{/*totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })*/} € de factures impayées</span>
+                      <span>{totalUnpaid.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € de factures impayées</span>
                     </div>
                   )}
                   {clientSubs.some(s => s.status === 'at_risk') && (
@@ -188,7 +188,7 @@ export default function ClientDetailModal({ client, onClose }) {
                           <p className="cdm-mini-deal-title">{d.title}</p>
                           <p className="cdm-mini-deal-meta">{d.closeDate}</p>
                         </div>
-                        <span className="cdm-mini-deal-value mono">{/*d.value.toLocaleString('fr-FR')*/} €</span>
+                        <span className="cdm-mini-deal-value mono">{Number(d.amount).toLocaleString('fr-FR')} €</span>
                         <span className="cdm-mini-deal-prob" style={{ color: d.probability >= 70 ? 'var(--green)' : 'var(--yellow)' }}>{d.probability}%</span>
                       </div>
                     ))
@@ -221,7 +221,7 @@ export default function ClientDetailModal({ client, onClose }) {
                 <SectionTitle icon={Activity} label="Activité récente" />
                 <div className="cdm-timeline-list">
                   {[
-                    //...clientDeals.slice(0, 2).map(d => ({ date: d.created, text: `Deal créé — ${d.title}`, type: 'deal', color: 'var(--accent)' })),
+                    ...clientDeals.slice(0, 2).map(d => ({ date: d.created, text: `Deal créé — ${d.title}`, type: 'deal', color: 'var(--accent)' })),
                     ...clientTasks.filter(t => t.status === 'done').slice(0, 2).map(t => ({ date: t.dueDate, text: `Tâche complétée — ${t.title}`, type: 'task', color: 'var(--green)' })),
                     ...clientFactures.slice(0, 1).map(f => ({ date: f.date, text: `Facture émise — ${f.id}`, type: 'invoice', color: 'var(--yellow)' })),
                   ]
@@ -250,8 +250,8 @@ export default function ClientDetailModal({ client, onClose }) {
             <div className="cdm-tab-content">
               <div className="cdm-tab-header">
                 <div className="cdm-tab-stats">
-                  <span className="cdm-tab-stat"><span className="mono" style={{ color: 'var(--green)' }}>{/*wonValue.toLocaleString('fr-FR')*/} €</span> gagnés</span>
-                  <span className="cdm-tab-stat"><span className="mono">{/*avgDealValue.toLocaleString('fr-FR')*/} €</span> deal moyen</span>
+                  <span className="cdm-tab-stat"><span className="mono" style={{ color: 'var(--green)' }}>{wonValue.toLocaleString('fr-FR')} €</span> gagnés</span>
+                  <span className="cdm-tab-stat"><span className="mono">{avgDealValue.toLocaleString('fr-FR')} €</span> deal moyen</span>
                   <span className="cdm-tab-stat"><span className="mono" style={{ color: 'var(--yellow)' }}>{winRate}%</span> win rate</span>
                 </div>
                 <button className="cdm-add-btn"><Plus size={13} /> Nouveau deal</button>
@@ -266,7 +266,7 @@ export default function ClientDetailModal({ client, onClose }) {
                       <p className="cdm-deal-meta">Clôture : <span className="mono">{new Date(d.closing_date).toLocaleDateString('fr-FR')}</span></p>
                     </div>
                     <div className="cdm-deal-right">
-                      <p className="cdm-deal-value mono">{/*d.value.toLocaleString('fr-FR')*/} €</p>
+                      <p className="cdm-deal-value mono">{d.amount.toLocaleString('fr-FR')} €</p>
                       <Badge type={d.status} />
                     </div>
                     <div className="cdm-deal-proba">

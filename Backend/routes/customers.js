@@ -40,6 +40,8 @@ router.get("/", (req, res) => {
         delete customersMap[customerId].description;
         delete customersMap[customerId].created_at;
         delete customersMap[customerId].updated_at;
+        delete customersMap[customerId].avatar;
+        delete customersMap[customerId].color;
         delete customersMap[customerId].status_name; // déjà copié dans status
         delete customersMap[customerId].deal_status_name;
       }
@@ -54,6 +56,8 @@ router.get("/", (req, res) => {
           closing_date: row.closing_date,
           owner: row.owner,
           description: row.description,
+          avatar: row.avatar,
+          color: row.color,
           created_at: row.created_at,
           updated_at: row.updated_at
         });
@@ -63,6 +67,14 @@ router.get("/", (req, res) => {
     res.json(Object.values(customersMap));
   });
 });
+
+router.get("/industry", (req, res) => {
+  const sql = 'SELECT * FROM customer_industry'
+  db.query(sql, (err, result) => {
+    if (err) return res.status(500).json(err);
+    res.json(result);
+  })
+})
 
 router.post("/", (req, res) => {
 
@@ -75,19 +87,20 @@ router.post("/", (req, res) => {
     siret,
     rcsNumber,
     industry,
-    status,
+    status_id, // ✅ IMPORTANT
     website,
-    lastContactDate
+    lastContactDate,
+    avatar,
+    color
   } = req.body;
 
-  // validation
   if (!customer_name || !contact_name || !contact_email) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
   const sql = `INSERT INTO customers 
-    (customer_name, contact_name, contact_email, contact_phone, legalForm, siret, rcsNumber, industry, status, website, lastContactDate, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+    (customer_name, contact_name, contact_email, contact_phone, legalForm, siret, rcsNumber, industry, status_id, website, lastContactDate, avatar, color, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
 
   db.query(
     sql,
@@ -100,15 +113,14 @@ router.post("/", (req, res) => {
       siret,
       rcsNumber,
       industry,
-      status,
+      status_id, // ✅ ici aussi
       website,
-      lastContactDate
+      lastContactDate,
+      avatar,
+      color
     ],
     (err, result) => {
-
-      if (err) {
-        return res.status(500).json(err);
-      }
+      if (err) return res.status(500).json(err);
 
       res.status(201).json({
         message: "Customer created",
@@ -116,7 +128,6 @@ router.post("/", (req, res) => {
       });
     }
   );
-
 });
 
 // Mettre à jour un customer (PUT)

@@ -22,4 +22,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-../Backend/.env
+# backend
+Backend/node_modules/
+Backend/.env
+
+# frontend
+treriwen-crm/node_modules/
+
+# global
+node_modules/
+.env

@@ -6,6 +6,7 @@ import {
 import Topbar from '../components/layout/Topbar';
 import Badge from '../components/ui/Badge';
 import { deals as initialDeals, stages, clients } from '../data/mockData';
+import { getAllDeals, getDealsStatus } from '../api/deals';
 import './Deals.css';
 
 /* ─── Probabilités par défaut selon le stade ────────────────────────────────── */
@@ -284,8 +285,8 @@ function DealCard({ deal, onAddClick }) {
         <p className="deal-card-title">{deal.title}</p>
         <button className="deal-card-menu"><MoreHorizontal size={13} /></button>
       </div>
-      <p className="deal-card-client">{deal.client}</p>
-      <div className="deal-card-value mono">{deal.value.toLocaleString('fr-FR')} €</div>
+      <p className="deal-card-client">{deal.customer_name}</p>
+      <div className="deal-card-value mono">{deal.amount.toLocaleString('fr-FR')} €</div>
       <div className="deal-card-progress">
         <div className="deal-progress-track">
           <div className="deal-progress-fill" style={{ width: `${probability}%`, background: progressColor }} />
@@ -293,7 +294,7 @@ function DealCard({ deal, onAddClick }) {
         <span className="deal-progress-pct mono">{probability}%</span>
       </div>
       <div className="deal-card-footer">
-        <span className="deal-card-meta"><Calendar size={10} />{deal.closeDate}</span>
+        <span className="deal-card-meta"><Calendar size={10} />{new Date(deal.closing_date).toLocaleDateString('fr-FR')}</span>
         <span className="deal-card-meta"><User size={10} />{deal.owner}</span>
       </div>
     </div>
@@ -303,9 +304,30 @@ function DealCard({ deal, onAddClick }) {
 /* ─── Page Deals ────────────────────────────────────────────────────────────── */
 export default function Deals() {
   const [dealList, setDealList] = useState(initialDeals);
+    const [statusList, setStatusList] = useState([]);
   const [view, setView]         = useState('kanban');
   const [showModal, setShowModal] = useState(false);
   const [defaultStage, setDefaultStage] = useState('qualification');
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+      const fetchDeals = async () => {
+        try {
+          setLoading(true);
+          const deals = await getAllDeals(); // ta fonction async
+          const status = await getDealsStatus();
+          setDealList(deals);
+          setStatusList(status);
+        } catch (err) {
+          console.error('Erreur lors du chargement des clients', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchDeals();
+      console.log(dealList)
+      console.log(statusList)
+    }, []);
 
   const openModal = (stage = 'qualification') => {
     setDefaultStage(stage);
@@ -331,18 +353,18 @@ export default function Deals() {
 
         {/* Summary Bar */}
         <div className="pipeline-summary stagger">
-          {stages.map(stage => {
-            const stageDeals = dealList.filter(d => d.stage === stage.id);
-            const stageValue = stageDeals.reduce((s, d) => s + d.value, 0);
+          {statusList.map(status => {
+            const statusDeals = dealList.filter(d => d.status === status.id);
+            const statusValue = statusDeals.reduce((s, d) => s + Number(d.amount || 0), 0);
             return (
-              <div key={stage.id} className="pipeline-summary-item">
-                <div className="pipeline-summary-dot" style={{ background: stage.color }} />
+              <div key={status.id} className="pipeline-summary-item">
+                <div className="pipeline-summary-dot" style={{ background: status.color }} />
                 <div>
-                  <p className="pipeline-summary-label">{stage.label}</p>
+                  <p className="pipeline-summary-label">{status.name}</p>
                   <p className="pipeline-summary-value mono">
-                    {stageValue > 0 ? `${stageValue.toLocaleString('fr-FR')} €` : '—'}
+                    {statusValue > 0 ? `${statusValue.toLocaleString('fr-FR')} €` : '—'}
                     <span className="pipeline-summary-count">
-                      {stageDeals.length > 0 && ` · ${stageDeals.length}`}
+                      {statusDeals.length > 0 && ` · ${statusDeals.length}`}
                     </span>
                   </p>
                 </div>
@@ -365,14 +387,14 @@ export default function Deals() {
         {/* Kanban Board */}
         {view === 'kanban' && (
           <div className="kanban-board">
-            {stages.map(stage => {
-              const stageDeals = dealList.filter(d => d.stage === stage.id);
+            {statusList.map(stage => {
+              const stageDeals = dealList.filter(d => d.status === stage.id);
               return (
                 <div key={stage.id} className="kanban-column">
                   <div className="kanban-col-header">
                     <div className="kanban-col-title">
                       <div className="kanban-stage-dot" style={{ background: stage.color }} />
-                      <span>{stage.label}</span>
+                      <span>{stage.name}</span>
                     </div>
                     <span className="kanban-col-count">{stageDeals.length}</span>
                   </div>
@@ -409,9 +431,9 @@ export default function Deals() {
                 {dealList.map(deal => (
                   <tr key={deal.id}>
                     <td><p className="deals-table-title">{deal.title}</p></td>
-                    <td className="deals-table-client">{deal.client}</td>
-                    <td className="mono deals-table-value">{deal.value.toLocaleString('fr-FR')} €</td>
-                    <td><Badge type={deal.stage} /></td>
+                    <td className="deals-table-client">{deal.customer_name}</td>
+                    <td className="mono deals-table-value">{deal.amount.toLocaleString('fr-FR')} €</td>
+                    <td><Badge type={deal.status_name} /></td>
                     <td>
                       <div className="table-proba">
                         <div className="proba-bar-sm">
@@ -420,7 +442,7 @@ export default function Deals() {
                         <span className="mono">{deal.probability}%</span>
                       </div>
                     </td>
-                    <td className="mono deals-date">{deal.closeDate}</td>
+                    <td className="mono deals-date">{new Date(deal.closing_date).toLocaleDateString('fr-FR')}</td>
                     <td><button className="row-action"><MoreHorizontal size={14} /></button></td>
                   </tr>
                 ))}

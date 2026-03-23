@@ -7,12 +7,12 @@ import {
 import Topbar from '../components/layout/Topbar';
 import Badge from '../components/ui/Badge';
 import ClientDetailModal from '../components/ui/ClientDetailModal';
-import { getAllCustomers } from '../api/customers'
+import { getAllCustomers, getCustomerIndustry, newCustomer } from '../api/customers'
 //import { clients } from '../data/mockData';
 import './Clients.css';
 import { getStatusCustomers } from '../api/status';
 
-const INDUSTRIES = ['SaaS', 'Marketing', 'Manufacturing', 'Consulting', 'Finance', 'Design', 'Tech', 'E-commerce', 'Santé', 'Éducation', 'Immobilier', 'Autre'];
+
 const COLORS = ['#3d7fff', '#a78bfa', '#2dd4a0', '#f5c842', '#fb923c', '#ff4d6a'];
 
 function NewClientModal({ onClose, onSave }) {
@@ -24,7 +24,22 @@ function NewClientModal({ onClose, onSave }) {
   });
   const [saved, setSaved] = useState(false);
   const [errors, setErrors] = useState({});
+  const [industries, setIndustries] = useState([]);
+  const [statusList, setStatusList] = useState([]);
+  
 
+  useEffect(() => {
+    const fetchIndustries = async () => {
+      const data = await getCustomerIndustry();
+      const status = await getStatusCustomers();
+
+      setIndustries(data);
+      setStatusList(status);
+    };
+
+    fetchIndustries();
+  }, []);
+  console.log(statusList);
   const set = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
     if (errors[field]) setErrors(e => ({ ...e, [field]: null }));
@@ -39,21 +54,51 @@ function NewClientModal({ onClose, onSave }) {
     return e;
   };
 
-  const handleSave = () => {
-    const e = validate();
-    if (Object.keys(e).length > 0) { setErrors(e); return; }
-    const initials = form.name.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase();
+  const handleSave = async () => {
+  const e = validate();
+  if (Object.keys(e).length > 0) {
+    setErrors(e);
+    return;
+  }
+
+  try {
+    // 🔁 Mapping front → backend
+    const payload = {
+      customer_name: form.name,
+      contact_name: form.contact,
+      contact_email: form.email,
+      contact_phone: form.phone,
+      legalForm: null,
+      siret: null,
+      rcsNumber: null,
+      industry: form.industry,
+      status_id: 1,
+      website: form.website,
+      lastContactDate: new Date().toISOString().slice(0, 10),
+      avatar: form.avatar,
+      color: form.color
+    };
+
+    const response = await newCustomer(payload);
+
+    // ✅ Ajout côté UI
     onSave({
-      id: Date.now(),
-      ...form,
-      avatar: initials,
-      value: 0,
-      deals: 0,
-      lastContact: new Date().toISOString().slice(0, 10),
+      id: response?.id || Date.now(),
+      ...payload,
+      color: form.color,
+      deals: [],
     });
+
     setSaved(true);
-    setTimeout(() => { setSaved(false); onClose(); }, 900);
-  };
+    setTimeout(() => {
+      setSaved(false);
+      onClose();
+    }, 900);
+
+  } catch (err) {
+    console.error(err);
+  }
+};
 
   // Close on backdrop
   const onBackdrop = (e) => { if (e.target === e.currentTarget) onClose(); };
@@ -109,15 +154,13 @@ function NewClientModal({ onClose, onSave }) {
             <div className="ncm-field">
               <label>Secteur</label>
               <select value={form.industry} onChange={e => set('industry', e.target.value)}>
-                {INDUSTRIES.map(i => <option key={i} value={i}>{i}</option>)}
+                {industries.map(i => <option key={i.id} value={i.id}>{i.name}</option>) } 
               </select>
             </div>
             <div className="ncm-field">
               <label>Statut</label>
               <select value={form.status} onChange={e => set('status', e.target.value)}>
-                <option value="prospect">Prospect</option>
-                <option value="active">Actif</option>
-                <option value="inactive">Inactif</option>
+                {statusList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
             </div>
             <div className="ncm-field">
@@ -301,11 +344,12 @@ export default function Clients() {
                     <td>
                       <div className="client-name-cell">
                         <div className="client-avatar" style={{ background: client.color + '22', color: client.color }}>
-                          {/*client.avatar*/}
+                          {client.avatar ? client.avatar : <User size={16} />}
+                          {console.log(client)}
                         </div>
                         <div>
                           <p className="client-name">{client.customer_name}</p>
-                          <p className="client-email">{client.contact_mail}</p>
+                          <p className="client-email">{client.contact_email}</p>
                         </div>
                       </div>
                     </td>

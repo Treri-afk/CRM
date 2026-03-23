@@ -5,9 +5,14 @@ const db = require("../config/db");
 // GET all deals
 router.get("/", (req, res) => {
   const sql = `
-    SELECT deals.*, deal_status.name AS status_name
+    SELECT 
+    deals.*, 
+    deal_status.name AS status_name,
+    deal_status.color AS status_color,
+    customers.customer_name AS customer_name
     FROM deals
     LEFT JOIN deal_status ON deals.status = deal_status.id
+    LEFT JOIN customers ON deals.customer_id = customers.id;
   `;
 
   db.query(sql, (err, results) => {
@@ -16,14 +21,28 @@ router.get("/", (req, res) => {
   });
 });
 
+
+router.get("/status", (req, res) => {
+  sql = "SELECT * FROM deal_status"
+  db.query(sql, (err, results) => {
+    if (err) return res.status(500).json(err);
+     res.json(results);
+  })
+})
+
 // GET deal by ID
 router.get("/:dealId", (req, res) => {
   const { dealId } = req.params;
 
   const sql = `
-    SELECT deals.*, deal_status.name AS status_name
+        SELECT 
+    deals.*, 
+    deal_status.name AS status_name,
+    deal_status.color AS status_color,
+    customers.customer_name AS customer_name
     FROM deals
     LEFT JOIN deal_status ON deals.status = deal_status.id
+    LEFT JOIN customers ON deals.customer_id = customers.id;
     WHERE deals.id = ?
   `;
 

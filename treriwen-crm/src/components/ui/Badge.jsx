@@ -14,7 +14,7 @@ const variants = {
   medium: { label: 'Moyenne', cls: 'yellow' },
   low: { label: 'Basse', cls: 'muted' },
   todo: { label: 'À faire', cls: 'muted' },
-  inprogress: { label: 'En cours', cls: 'blue' },
+  in_progress: { label: 'En cours', cls: 'blue' },
   done: { label: 'Terminé', cls: 'green' },
 };
 

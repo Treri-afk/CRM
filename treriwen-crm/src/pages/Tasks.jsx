@@ -8,12 +8,13 @@ import Topbar from '../components/layout/Topbar';
 import Badge from '../components/ui/Badge';
 import { tasks, clients, deals } from '../data/mockData';
 import './Tasks.css';
+import { getTasks } from '../api/tasks';
 
 /* ─── Config types & priorités ──────────────────────────────────────────────── */
 const typeConfig = [
   { id: 'email',    label: 'Email',     icon: Mail,     color: '#3d7fff' },
   { id: 'call',     label: 'Appel',     icon: Phone,    color: '#2dd4a0' },
-  { id: 'meeting',  label: 'Réunion',   icon: Calendar, color: '#a78bfa' },
+  { id: 'meeting',  label: 'Réunion',   icon: Calendar, color: '#a78bfa'   },
   { id: 'document', label: 'Document',  icon: FileText, color: '#f5c842' },
   { id: 'review',   label: 'Révision',  icon: Eye,      color: '#fb923c' },
 ];
@@ -285,9 +286,9 @@ function NewTaskModal({ onClose, onSave }) {
 function TaskRow({ task, onToggle }) {
   const Icon     = typeIcons[task.type]  || FileText;
   const iconColor = typeColors[task.type] || 'var(--text-muted)';
-  const isDone   = task.status === 'done';
+  const isDone   = task.status_name === 'done';
   const today    = new Date().toISOString().slice(0, 10);
-  const isOverdue = !isDone && task.dueDate < today;
+  const isOverdue = !isDone && new Date(task.due_date).toLocaleDateString('fr-FR') < today;
 
   return (
     <div className={`task-row ${isDone ? 'done' : ''} ${isOverdue ? 'overdue' : ''}`}>
@@ -298,15 +299,15 @@ function TaskRow({ task, onToggle }) {
         <Icon size={12} strokeWidth={1.8} />
       </div>
       <div className="task-row-content">
-        <p className="task-row-title">{task.title}</p>
-        <p className="task-row-meta">{task.client}</p>
+        <p className="task-row-title">{task.name}</p>
+        <p className="task-row-meta">{task.client_name}</p>
       </div>
       <div className="task-row-due">
         <Clock size={11} />
-        <span className={isOverdue ? 'overdue-text' : ''}>{task.dueDate}</span>
+        <span className={isOverdue ? 'overdue-text' : ''}>{new Date(task.due_date).toLocaleDateString('fr-FR')}</span>
       </div>
-      <Badge type={task.priority} />
-      <Badge type={task.status} />
+      <Badge type={task.priority_name} />
+      <Badge type={task.status_name} />
     </div>
   );
 }
@@ -316,10 +317,27 @@ export default function Tasks() {
   const [taskList,   setTaskList]   = useState(tasks);
   const [filter,     setFilter]     = useState('all');
   const [showModal,  setShowModal]  = useState(false);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+        const fetchTasks = async () => {
+          try {
+            setLoading(true);
+            const tasks = await getTasks();
+      
+            setTaskList(tasks);
+          } catch (err) {
+            console.error('Erreur lors du chargement des clients', err);
+          } finally {
+            setLoading(false);
+          }
+        };
+        fetchTasks();
+      }, []);
 
   const toggle = (id) => {
     setTaskList(prev => prev.map(t =>
-      t.id === id ? { ...t, status: t.status === 'done' ? 'todo' : 'done' } : t
+      t.id === id ? { ...t, status_name: t.status_name === 'done' ? 'todo' : 'done' } : t
     ));
   };
 
@@ -328,26 +346,27 @@ export default function Tasks() {
   };
 
   const filtered = taskList.filter(t => {
+    console.log(t)
     if (filter === 'all')  return true;
-    if (filter === 'todo') return t.status !== 'done';
-    if (filter === 'done') return t.status === 'done';
-    if (filter === 'high') return t.priority === 'high';
+    if (filter === 'todo') return t.status_name !== 'done';
+    if (filter === 'done') return t.status_name === 'done';
+    if (filter === 'high') return t.priority_name === 'high';
     return true;
   });
 
   const today          = new Date().toISOString().slice(0, 10);
-  const upcomingTasks  = filtered.filter(t => t.dueDate >= today && t.status !== 'done');
-  const doneTasks      = filtered.filter(t => t.status === 'done');
-  const overdueTasks   = filtered.filter(t => t.dueDate < today && t.status !== 'done');
+  const upcomingTasks  = filtered.filter(t => new Date(t.due_date).toLocaleDateString('fr-FR') >= today && t.status_name !== 'done');
+  const doneTasks      = filtered.filter(t => t.status_name === 'done');
+  const overdueTasks   = filtered.filter(t => new Date(t.due_date).toLocaleDateString('fr-FR') < today && t.status_name !== 'done');
   const completionRate = taskList.length > 0
-    ? Math.round((taskList.filter(t => t.status === 'done').length / taskList.length) * 100)
+    ? Math.round((taskList.filter(t => t.status_name === 'done').length / taskList.length) * 100)
     : 0;
 
   return (
     <div className="page">
       <Topbar
         title="Tâches"
-        subtitle={`${taskList.filter(t => t.status !== 'done').length} tâches en attente`}
+        subtitle={`${taskList.filter(t => t.status_name !== 'done').length} tâches en attente`}
       />
 
       <div className="page-content">
@@ -363,7 +382,7 @@ export default function Tasks() {
               <div className="tasks-progress-fill" style={{ width: `${completionRate}%` }} />
             </div>
             <p className="tasks-progress-sub">
-              {taskList.filter(t => t.status === 'done').length}/{taskList.length} tâches complétées
+              {taskList.filter(t => t.status_name === 'done').length}/{taskList.length} tâches complétées
             </p>
           </div>
           <div className="tasks-stat-mini">
@@ -371,11 +390,11 @@ export default function Tasks() {
             <p className="tasks-stat-lbl">En retard</p>
           </div>
           <div className="tasks-stat-mini">
-            <p className="tasks-stat-num">{taskList.filter(t => t.priority === 'high' && t.status !== 'done').length}</p>
+            <p className="tasks-stat-num">{taskList.filter(t => t.priority_name === 'high' && t.status_name !== 'done').length}</p>
             <p className="tasks-stat-lbl">Haute priorité</p>
           </div>
           <div className="tasks-stat-mini">
-            <p className="tasks-stat-num">{taskList.filter(t => t.status === 'inprogress').length}</p>
+            <p className="tasks-stat-num">{taskList.filter(t => t.status_name === 'inprogress').length}</p>
             <p className="tasks-stat-lbl">En cours</p>
           </div>
         </div>

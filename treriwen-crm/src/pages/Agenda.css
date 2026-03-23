@@ -264,7 +264,7 @@
   background: var(--bg-card);
   border: 1px solid var(--border-dim);
   border-radius: 12px;
-  overflow: hidden;
+  
 }
 
 .month-header {

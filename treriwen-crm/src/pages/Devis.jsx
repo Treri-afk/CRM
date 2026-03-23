@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Plus, Trash2, Eye, Download, Send, Copy,
   ArrowLeft, Check, RefreshCw, ToggleLeft, ToggleRight
@@ -7,6 +7,7 @@ import Topbar from '../components/layout/Topbar';
 import { clients } from '../data/mockData';
 import { devis as devisExtra } from '../data/mockDataExtra';
 import './Documents.css';
+import { getAllDevis, getDevisStatus } from '../api/devis';
 
 const allDevis = devisExtra;
 
@@ -32,8 +33,29 @@ function RecurringToggle({ checked, onChange }) {
 }
 
 function DevisEditor({ doc, onBack }) {
+    const [devisList, setDevisList] = useState([]);
+  const [statusList, setStatusList] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+      const fetchClients = async () => {
+        try {
+          setLoading(true);
+          const devis = await getAllDevis(); // ta fonction async
+          const status = await getDevisStatus();
+          setDevisList(devis);
+          setStatusList(status);
+       
+        } catch (err) {
+          console.error('Erreur lors du chargement des clients', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchClients();
+    }, []);
   const [form, setForm] = useState(doc || {
-    id: `DEV-2026-00${allDevis.length + 1}`,
+    id: `DEV-2026-00${devisList.length + 1}`,
     client: '',
     contact: '',
     email: '',
@@ -67,16 +89,16 @@ function DevisEditor({ doc, onBack }) {
 
   const removeItem = (id) => setForm(f => ({ ...f, items: f.items.filter(i => i.id !== id) }));
 
-  const onetimeItems  = form.items.filter(i => !i.isRecurring);
-  const recurringItems = form.items.filter(i => i.isRecurring);
-  const onetimeSubtotal = onetimeItems.reduce((s, i) => s + Number(i.qty) * Number(i.price), 0);
-  const mrrAmount = recurringItems.reduce((s, i) => s + Number(i.qty) * Number(i.price), 0);
+  const onetimeItems  = form.lignes.filter(i => !i.isRecurring);
+  const recurringItems = form.lignes.filter(i => i.isRecurring);
+  const onetimeSubtotal = onetimeItems.reduce((s, i) => s + Number(i.quantite) * Number(i.prix_unitaire_ht), 0);
+  const mrrAmount = recurringItems.reduce((s, i) => s + Number(i.quantite) * Number(i.prix_unitaire_ht), 0);
   const arrAmount = mrrAmount * 12;
   const allSubtotal = onetimeSubtotal + mrrAmount;
-  const tax = allSubtotal * (form.taxRate / 100);
+  const tax = allSubtotal * (20 / 100);
   const total = allSubtotal + tax;
   const hasRecurring = recurringItems.length > 0 || form.isRecurring;
-
+  console.log(form);
   return (
     <div className="doc-editor-layout">
       {/* ── LEFT: FORM ── */}
@@ -108,11 +130,11 @@ function DevisEditor({ doc, onBack }) {
             <div className="doc-form-grid">
               <div className="form-group">
                 <label>Numéro</label>
-                <input className="mono" value={form.id} onChange={e => setForm({ ...form, id: e.target.value })} />
+                <input className="mono" value={form.reference} onChange={e => setForm({ ...form, id: e.target.value })} />
               </div>
               <div className="form-group">
                 <label>Statut</label>
-                <select value={form.status} onChange={e => setForm({ ...form, status: e.target.value })}>
+                <select value={form.status_name} onChange={e => setForm({ ...form, status: e.target.value })}>
                   <option value="draft">Brouillon</option>
                   <option value="sent">Envoyé</option>
                   <option value="accepted">Accepté</option>
@@ -121,11 +143,12 @@ function DevisEditor({ doc, onBack }) {
               </div>
               <div className="form-group">
                 <label>Date</label>
-                <input type="date" value={form.date} onChange={e => setForm({ ...form, date: e.target.value })} />
+                <input type="date" value={new Date(form.date_devis).toLocaleDateString('en-CA')} onChange={e => setForm({ ...form, date: e.target.value })} />
               </div>
               <div className="form-group">
                 <label>Valide jusqu'au</label>
-                <input type="date" value={form.validUntil} onChange={e => setForm({ ...form, validUntil: e.target.value })} />
+                
+                <input type="date" value={new Date(form.date_validite).toLocaleDateString('en-CA')} onChange={e => setForm({ ...form, validUntil: e.target.value })} />
               </div>
               {form.isRecurring && <>
                 <div className="form-group">
@@ -185,16 +208,16 @@ function DevisEditor({ doc, onBack }) {
               {onetimeItems.map(item => (
                 <div key={item.id} className="doc-item-row">
                   <input style={{ flex: 3 }} className="doc-item-input" placeholder="Description" value={item.description} onChange={e => updateItem(item.id, 'description', e.target.value)} />
-                  <input style={{ flex: 1 }} className="doc-item-input mono" type="number" min="0" value={item.qty} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
-                  <select style={{ flex: 1 }} className="doc-item-input" value={item.unit} onChange={e => updateItem(item.id, 'unit', e.target.value)}>
+                  <input style={{ flex: 1 }} className="doc-item-input mono" type="number" min="0" value={parseInt(item.quantite)} onChange={e => updateItem(item.id, 'qty', e.target.value)} />
+                  <select style={{ flex: 1 }} className="doc-item-input" value={item.unite_name} onChange={e => updateItem(item.id, 'unit', e.target.value)}>
                     <option value="forfait">forfait</option>
                     <option value="jours">jours</option>
                     <option value="heures">heures</option>
                     <option value="sessions">sessions</option>
                     <option value="unité">unité</option>
                   </select>
-                  <input style={{ flex: 1 }} className="doc-item-input mono" type="number" min="0" value={item.price} onChange={e => updateItem(item.id, 'price', e.target.value)} />
-                  <span style={{ flex: 1, textAlign: 'right' }} className="doc-item-total mono">{(item.qty * item.price).toLocaleString('fr-FR')} €</span>
+                  <input style={{ flex: 1 }} className="doc-item-input mono" type="number" min="0" value={parseInt(item.prix_unitaire_ht)} onChange={e => updateItem(item.id, 'price', e.target.value)} />
+                  <span style={{ flex: 1, textAlign: 'right' }} className="doc-item-total mono">{item.quantite * item.prix_unitaire_ht} €</span>
                   <button className="doc-item-remove" onClick={() => removeItem(item.id)}><Trash2 size={12} /></button>
                 </div>
               ))}
@@ -310,12 +333,14 @@ function DevisEditor({ doc, onBack }) {
                 <thead><tr><th style={{ flex: 3 }}>Description</th><th>Qté</th><th>Unité</th><th>P.U. HT</th><th style={{ textAlign: 'right' }}>Total HT</th></tr></thead>
                 <tbody>
                   {onetimeItems.map(item => (
+      
                     <tr key={item.id}>
                       <td style={{ flex: 3 }}>{item.description || '—'}</td>
-                      <td>{item.qty}</td><td>{item.unit}</td>
-                      <td className="mono">{Number(item.price).toLocaleString('fr-FR')} €</td>
-                      <td className="mono" style={{ textAlign: 'right' }}>{(item.qty * item.price).toLocaleString('fr-FR')} €</td>
+                      <td>{parseInt(item.quantite)}</td><td>{item.unite_name}</td>
+                      <td className="mono">{item.prix_unitaire_ht} €</td>
+                      <td className="mono" style={{ textAlign: 'right' }}>{(item.quantite * item.prix_unitaire_ht).toLocaleString('fr-FR')}€</td>
                     </tr>
+                    
                   ))}
                 </tbody>
               </table>
@@ -362,7 +387,28 @@ function DevisEditor({ doc, onBack }) {
 export default function Devis() {
   const [selected, setSelected] = useState(null);
   const [isNew, setIsNew] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [devisList, setDevisList] = useState([]);
+  const [statusList, setStatusList] = useState([]);
 
+  useEffect(() => {
+      const fetchClients = async () => {
+        try {
+          setLoading(true);
+          const devis = await getAllDevis(); // ta fonction async
+          const status = await getDevisStatus();
+          setDevisList(devis);
+          setStatusList(status);
+           
+        } catch (err) {
+          console.error('Erreur lors du chargement des clients', err);
+        } finally {
+          setLoading(false);
+        }
+      };
+      fetchClients();
+   
+    }, []);
   if (selected || isNew) {
     return (
       <div className="page">
@@ -374,18 +420,18 @@ export default function Devis() {
     );
   }
 
-  const totalDevis = allDevis.reduce((s, d) => s + d.items.reduce((ss, i) => ss + i.qty * i.price, 0) * 1.2, 0);
-
+  //const totalDevis = devisList.reduce((s, d) => s + d.items.reduce((ss, i) => ss + i.qty * i.price, 0) * 1.2, 0);
+const totalDevis = devisList.reduce((s, d) => s + Number(d.total_ttc), 0)
   return (
     <div className="page">
-      <Topbar title="Devis" subtitle={`${allDevis.length} devis · ${totalDevis.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € TTC`} />
+      <Topbar title="Devis" subtitle={`${devisList.length} devis · ${totalDevis.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} € TTC`} />
       <div className="page-content">
         <div className="docs-summary stagger">
           {[
             { label: 'Total devis', value: totalDevis, format: 'currency' },
-            { label: 'Brouillons', value: allDevis.filter(d => d.status === 'draft').length, color: '#8892aa' },
-            { label: 'Envoyés',    value: allDevis.filter(d => d.status === 'sent').length,  color: '#3d7fff' },
-            { label: 'Acceptés',   value: allDevis.filter(d => d.status === 'accepted').length, color: '#2dd4a0' },
+            { label: 'Brouillons', value: devisList.filter(d => d.status_name === 'draft').length, color: '#8892aa' },
+            { label: 'Envoyés',    value: devisList.filter(d => d.status_name === 'sent').length,  color: '#3d7fff' },
+            { label: 'Acceptés',   value: devisList.filter(d => d.status_name === 'accepted').length, color: '#2dd4a0' },
           ].map(({ label, value, format, color }) => (
             <div key={label} className="doc-stat">
               <p className="doc-stat-value mono" style={color ? { color } : {}}>
@@ -405,16 +451,16 @@ export default function Devis() {
               </tr>
             </thead>
             <tbody>
-              {allDevis.map(d => {
-                const ttc = d.items.reduce((s, i) => s + i.qty * i.price, 0) * (1 + d.taxRate / 100);
+              {devisList.map(d => {
+                const ttc = d.total_ttc
                 return (
                   <tr key={d.id} onClick={() => setSelected(d)} style={{ cursor: 'pointer' }}>
-                    <td className="mono doc-id">{d.id}</td>
+                    <td className="mono doc-id">{d.reference}</td>
                     <td><p className="doc-client-name">{d.client}</p><p className="doc-contact">{d.contact}</p></td>
-                    <td className="mono doc-date">{d.date}</td>
-                    <td className="mono doc-date">{d.validUntil}</td>
+                    <td className="mono doc-date">{new Date(d.date_devis).toLocaleDateString('fr-FR')}</td>
+                    <td className="mono doc-date">{new Date(d.date_validite).toLocaleDateString('fr-FR')}</td>
                     <td className="mono doc-amount">{ttc.toLocaleString('fr-FR', { maximumFractionDigits: 0 })} €</td>
-                    <td><span className={`status-pill ${d.status}`}>{statusConfig[d.status]?.label}</span></td>
+                    <td><span className={`status-pill ${d.status_name}`}>{statusConfig[d.status_name]?.label}</span></td>
                     <td>
                       <div className="doc-row-actions" onClick={e => e.stopPropagation()}>
                         <button title="Aperçu"><Eye size={13} /></button>

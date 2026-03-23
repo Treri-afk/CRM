@@ -8,6 +8,9 @@ const companiesRoutes = require("./routes/companies");
 const customersRoutes = require("./routes/customers");
 const statusRoutes = require("./routes/status");
 const dealsRoutes = require("./routes/deals")
+const calendarsRoutes = require("./routes/calendars")
+const tasksRoutes = require("./routes/tasks")
+const devisRoutes = require("./routes/devis")
 
 const app = express();
 app.use(cors());
@@ -19,8 +22,11 @@ app.use("/api/companies", companiesRoutes)
 app.use("/api/customers", customersRoutes);
 app.use("/api/status/", statusRoutes);
 app.use("/api/deals", dealsRoutes);
+app.use("/api/calendars", calendarsRoutes);
+app.use("/api/tasks", tasksRoutes);
+app.use("/api/devis", devisRoutes);
 
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5002;
 
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
