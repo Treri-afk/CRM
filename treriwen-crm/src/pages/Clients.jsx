@@ -18,8 +18,8 @@ const COLORS = ['#3d7fff', '#a78bfa', '#2dd4a0', '#f5c842', '#fb923c', '#ff4d6a'
 function NewClientModal({ onClose, onSave }) {
   const [form, setForm] = useState({
     name: '', contact: '', email: '', phone: '',
-    industry: 'SaaS', status: 'prospect',
-    address: '', website: '', notes: '',
+    industry: '', status: '',
+    address: '', website: '', notes: '', avatar: '',
     color: '#3d7fff',
   });
   const [saved, setSaved] = useState(false);
@@ -39,67 +39,79 @@ function NewClientModal({ onClose, onSave }) {
 
     fetchIndustries();
   }, []);
-  console.log(statusList);
   const set = (field, value) => {
-    setForm(f => ({ ...f, [field]: value }));
+     setForm(f => {
+    const updatedForm = { ...f, [field]: value };
+
+    // Si le field modifié est le nom, on génère automatiquement l'avatar
+    if (field === 'name') {
+      updatedForm.avatar = value
+        ? value.split(' ').map(w => w[0]).join('').slice(0, 2).toUpperCase()
+        : '';
+    }
+
+    return updatedForm;
+  });
     if (errors[field]) setErrors(e => ({ ...e, [field]: null }));
   };
 
   const validate = () => {
     const e = {};
-    if (!form.name.trim())    e.name    = 'Le nom est requis';
-    if (!form.contact.trim()) e.contact = 'Le contact est requis';
-    if (!form.email.trim())   e.email   = 'L\'email est requis';
+    if (!form.name.trim())    e.name      = 'Le nom est requis';
+    if (!form.contact.trim()) e.contact   = 'Le contact est requis';
+    if (!form.email.trim())   e.email     = 'L\'email est requis';
+    if (!form.industry ) e.industry = 'l\'industrie est requis'
+    if (!form.status) e.status     = 'le status est requis'
     else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = 'Email invalide';
     return e;
   };
 
   const handleSave = async () => {
-  const e = validate();
-  if (Object.keys(e).length > 0) {
-    setErrors(e);
-    return;
-  }
+    const e = validate();
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return;
+    }
 
-  try {
-    // 🔁 Mapping front → backend
-    const payload = {
-      customer_name: form.name,
-      contact_name: form.contact,
-      contact_email: form.email,
-      contact_phone: form.phone,
-      legalForm: null,
-      siret: null,
-      rcsNumber: null,
-      industry: form.industry,
-      status_id: 1,
-      website: form.website,
-      lastContactDate: new Date().toISOString().slice(0, 10),
-      avatar: form.avatar,
-      color: form.color
-    };
+    try {
+      // 🔁 Mapping front → backend
+      const payload = {
+        customer_name: form.name,
+        contact_name: form.contact,
+        contact_email: form.email,
+        contact_phone: form.phone,
+        legalForm: null,
+        siret: null,
+        rcsNumber: null,
+        industry: form.industry,
+        status_id: form.status,
+        website: form.website,
+        lastContactDate: new Date().toISOString().slice(0, 10),
+        avatar: form.avatar,
+        color: form.color
+      };
 
-    const response = await newCustomer(payload);
+      const response = await newCustomer(payload);
 
-    // ✅ Ajout côté UI
-    onSave({
-      id: response?.id || Date.now(),
-      ...payload,
-      color: form.color,
-      deals: [],
-    });
+      // ✅ Ajout côté UI
+      onSave({
+        id: response?.id || Date.now(),
+        ...payload,
+        color: form.color,
+        deals: [],
+      });
 
-    setSaved(true);
-    setTimeout(() => {
-      setSaved(false);
-      onClose();
-    }, 900);
+      setSaved(true);
+      setTimeout(() => {
+        setSaved(false);
+        onClose();
+      }, 900);
 
-  } catch (err) {
-    console.error(err);
-  }
-};
-
+    } catch (err) {
+      console.error(err);
+    }
+  };
+  
   // Close on backdrop
   const onBackdrop = (e) => { if (e.target === e.currentTarget) onClose(); };
 
@@ -152,16 +164,20 @@ function NewClientModal({ onClose, onSave }) {
               {errors.name && <span className="ncm-error">{errors.name}</span>}
             </div>
             <div className="ncm-field">
-              <label>Secteur</label>
-              <select value={form.industry} onChange={e => set('industry', e.target.value)}>
+              <label>Secteur *</label>
+              <select value={form.industry} onChange={e => set('industry', e.target.value)} className={errors.industry ? 'error' : ''}>
+                <option value=""></option>
                 {industries.map(i => <option key={i.id} value={i.id}>{i.name}</option>) } 
               </select>
+              {errors.contact && <span className="ncm-error">{errors.industry}</span>}
             </div>
             <div className="ncm-field">
-              <label>Statut</label>
-              <select value={form.status} onChange={e => set('status', e.target.value)}>
+              <label>Statut *</label>
+              <select value={form.status} onChange={e => set('status', e.target.value)} className={errors.status ? 'error' : ''}>
+                 <option value=""></option>
                 {statusList.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
               </select>
+              {errors.contact && <span className="ncm-error">{errors.status}</span>}
             </div>
             <div className="ncm-field">
               <label>Site web</label>
@@ -268,6 +284,7 @@ export default function Clients() {
       }
     };
     fetchClients();
+
   }, []);
  
   const filtered = clientList.filter(c => filterStatus.name === 'all' || c.status === filterStatus.name)
@@ -345,7 +362,7 @@ export default function Clients() {
                       <div className="client-name-cell">
                         <div className="client-avatar" style={{ background: client.color + '22', color: client.color }}>
                           {client.avatar ? client.avatar : <User size={16} />}
-                          {console.log(client)}
+                          { console.log(client)}
                         </div>
                         <div>
                           <p className="client-name">{client.customer_name}</p>
@@ -357,7 +374,7 @@ export default function Clients() {
                     <td><Badge type={client.status} /></td>
                     <td>
                       <span className="client-industry">
-                        <Building2 size={11} /> {client.industry}
+                        <Building2 size={11} /> {client.industry_name}
                       </span>
                     </td>
                   <td className="mono client-value">
@@ -395,11 +412,11 @@ export default function Clients() {
             <div className="client-detail fade-in">
               <div className="detail-header">
                 <div className="detail-avatar" style={{ background: selected.color + '22', color: selected.color }}>
-                  {/*selected.avatar*/}
+                  {selected.avatar}
                 </div>
                 <div className="detail-title">
                   <h3>{selected.customer_name}</h3>
-                  <p>{selected.industry}</p>
+                  <p>{selected.industry_name}</p>
                 </div>
                 <button className="detail-external"><ExternalLink size={13} /></button>
               </div>

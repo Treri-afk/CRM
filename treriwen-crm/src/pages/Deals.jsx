@@ -5,9 +5,10 @@ import {
 } from 'lucide-react';
 import Topbar from '../components/layout/Topbar';
 import Badge from '../components/ui/Badge';
-import { deals as initialDeals, stages, clients } from '../data/mockData';
-import { getAllDeals, getDealsStatus } from '../api/deals';
+import { deals as initialDeals, clients } from '../data/mockData';
+import { getAllDeals, getDealsStatus, newDeal } from '../api/deals';
 import './Deals.css';
+import { getAllCustomers } from '../api/customers';
 
 /* ─── Probabilités par défaut selon le stade ────────────────────────────────── */
 const stageProbabilities = {
@@ -21,23 +22,40 @@ const stageProbabilities = {
 /* ─── Modal Nouveau Deal ────────────────────────────────────────────────────── */
 function NewDealModal({ onClose, onSave, defaultStage }) {
   const [form, setForm] = useState({
-    title:       '',
-    clientId:    '',
-    client:      '',
-    value:       '',
-    stage:       defaultStage || 'qualification',
-    probability: stageProbabilities[defaultStage || 'qualification'],
-    closeDate:   '',
-    owner:       'Vous',
+    id_company:       '',
+    id_customer:    '',
+    title:      '',
+    status:       defaultStage || 'qualification',
+    estimations:      '', 
+    probability: 20,
+    probability_name: stageProbabilities[defaultStage || 'qualification'],
+    clotureDate:   '',
+    responsable:       'Vous',
     description: '',
   });
   const [saved, setSaved]   = useState(false);
   const [errors, setErrors] = useState({});
+  const [customer, setCustomer] = useState([]);
+  const [stages, setStage] = useState([]);
 
+   useEffect(() => {
+      const fetchData = async () => {
+        const customer = await getAllCustomers();
+        const status = await getDealsStatus();
+        setCustomer(customer);
+        setStage(status);
+      };
+  
+      fetchData();
+    }, []);
   // Sync probabilité quand le stade change
   useEffect(() => {
-    setForm(f => ({ ...f, probability: stageProbabilities[f.stage] }));
-  }, [form.stage]);
+    setForm(f => ({
+      ...f,
+      probability: stageProbabilities[f.status],
+      probability_name: f.status, // ✅ AJOUT IMPORTANT
+    }));
+  }, [form.status]);
 
   const set = (field, value) => {
     setForm(f => ({ ...f, [field]: value }));
@@ -53,28 +71,31 @@ function NewDealModal({ onClose, onSave, defaultStage }) {
   const validate = () => {
     const e = {};
     if (!form.title.trim())   e.title  = 'Le titre est requis';
-    if (!form.client.trim())  e.client = 'Le client est requis';
+    if (!form.id_customer) e.client = 'Le client est requis';
     if (!form.value || isNaN(Number(form.value)) || Number(form.value) <= 0)
       e.value = 'Montant invalide';
     if (!form.closeDate)      e.closeDate = 'La date de clôture est requise';
     return e;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const e = validate();
     if (Object.keys(e).length > 0) { setErrors(e); return; }
-    onSave({
-      id:          Date.now(),
-      title:       form.title,
-      client:      form.client,
-      clientId:    Number(form.clientId),
-      value:       Number(form.value),
-      stage:       form.stage,
-      probability: Number(form.probability),
-      closeDate:   form.closeDate,
-      owner:       form.owner,
-      created:     new Date().toISOString().slice(0, 10),
-    });
+
+    const payload = {
+      id_company: 1,
+      id_customer: Number(form.id_customer),
+      title: form.title,
+      status: form.status,
+      estimation: Number(form.value).toFixed(2),
+      probability: Number(form.probability), 
+      clotureDate: form.closeDate,
+      responsable: form.owner,
+      description: form.description,
+    };
+    console.log(payload);
+    onSave(payload);
+    await newDeal(payload);
     setSaved(true);
     setTimeout(() => { setSaved(false); onClose(); }, 900);
   };
@@ -128,13 +149,13 @@ function NewDealModal({ onClose, onSave, defaultStage }) {
           <div className="ndm-field full">
             <label><Building2 size={11} /> Client *</label>
             <select
-              value={form.clientId}
-              onChange={e => setClient(e.target.value)}
+              value={form.id_customer}
+              onChange={e => set('id_customer', e.target.value)}
               className={errors.client ? 'error' : ''}
             >
               <option value="">Sélectionner un client</option>
-              {clients.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+              {customer.map(c => (
+                <option key={c.id} value={c.id}>{c.customer_name}</option>
               ))}
             </select>
             {errors.client && <span className="ndm-error">{errors.client}</span>}
@@ -160,9 +181,9 @@ function NewDealModal({ onClose, onSave, defaultStage }) {
 
             <div className="ndm-field">
               <label><Target size={11} /> Stade du pipeline</label>
-              <select value={form.stage} onChange={e => set('stage', e.target.value)}>
+              <select value={form.status} onChange={e => set('status', e.target.value)}>
                 {stages.map(s => (
-                  <option key={s.id} value={s.id}>{s.label}</option>
+                  <option key={s.id} value={s.id}>{s.name}</option>
                 ))}
               </select>
             </div>
@@ -278,7 +299,6 @@ function DealCard({ deal, onAddClick }) {
     probability >= 80 ? 'var(--green)' :
     probability >= 50 ? 'var(--yellow)' :
     probability > 0   ? 'var(--accent)' : 'var(--red)';
-
   return (
     <div className="deal-card fade-in">
       <div className="deal-card-header">
@@ -325,8 +345,6 @@ export default function Deals() {
         }
       };
       fetchDeals();
-      console.log(dealList)
-      console.log(statusList)
     }, []);
 
   const openModal = (stage = 'qualification') => {

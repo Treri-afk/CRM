@@ -87,10 +87,10 @@ function DevisEditor({ doc, onBack }) {
     }));
   };
 
-  const removeItem = (id) => setForm(f => ({ ...f, items: f.items.filter(i => i.id !== id) }));
+  const removeItem = (id) =>setForm(f => ({...f, items: (f.items || []).filter(i => i.id !== id)}));
 
-  const onetimeItems  = form.lignes.filter(i => !i.isRecurring);
-  const recurringItems = form.lignes.filter(i => i.isRecurring);
+  const onetimeItems = form.lignes?.filter(i => !i.isRecurring) || [];
+  const recurringItems = form.lignes?.filter(i => i.isRecurring) || [];
   const onetimeSubtotal = onetimeItems.reduce((s, i) => s + Number(i.quantite) * Number(i.prix_unitaire_ht), 0);
   const mrrAmount = recurringItems.reduce((s, i) => s + Number(i.quantite) * Number(i.prix_unitaire_ht), 0);
   const arrAmount = mrrAmount * 12;
@@ -98,7 +98,6 @@ function DevisEditor({ doc, onBack }) {
   const tax = allSubtotal * (20 / 100);
   const total = allSubtotal + tax;
   const hasRecurring = recurringItems.length > 0 || form.isRecurring;
-  console.log(form);
   return (
     <div className="doc-editor-layout">
       {/* ── LEFT: FORM ── */}

@@ -57,16 +57,16 @@ router.get("/:dealId", (req, res) => {
 
 // POST new deal
 router.post("/", (req, res) => {
-  const { id_company, id_customer, title, status, estimation, probability, clotureDate, responsable, description } = req.body;
+  const { id_company, id_customer, title, status, estimation, probability, clotureDate, description } = req.body;
   if (!id_company || !id_customer || !title || !status || !clotureDate) {
     return res.status(400).json({ message: "Required fields missing" });
   }
 
   const sql = `INSERT INTO deals 
-    (id_company, id_customer, title, status, estimation, probability, clotureDate, responsable, description, date_creation, date_update)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
+    (company_id, customer_id, title, status, amount, probability, closing_date, description, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())`;
 
-  db.query(sql, [id_company, id_customer, title, status, estimation, probability, clotureDate, responsable, description], (err, result) => {
+  db.query(sql, [id_company, id_customer, title, status, estimation, probability, clotureDate, description], (err, result) => {
     if (err) return res.status(500).json(err);
     res.status(201).json({ message: "Deal created", id: result.insertId });
   });

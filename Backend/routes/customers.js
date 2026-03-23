@@ -8,11 +8,13 @@ router.get("/", (req, res) => {
     SELECT customers.*, customer_status.name AS status_name,
            deals.id AS deal_id, deals.title, deals.status AS deal_status_id,
            deals.amount, deals.probability, deals.closing_date, deals.owner, deals.description, deals.created_at, deals.updated_at,
-           deal_status.name AS deal_status_name
+           deal_status.name AS deal_status_name,
+           customer_industry.name as industry_name
     FROM customers
     LEFT JOIN customer_status ON customers.status_id = customer_status.id
     LEFT JOIN deals ON deals.customer_id = customers.id
     LEFT JOIN deal_status ON deals.status = deal_status.id
+    LEFT JOIN customer_industry ON customers.industry = customer_industry.id
   `;
 
   db.query(sql, (err, results) => {
@@ -40,8 +42,6 @@ router.get("/", (req, res) => {
         delete customersMap[customerId].description;
         delete customersMap[customerId].created_at;
         delete customersMap[customerId].updated_at;
-        delete customersMap[customerId].avatar;
-        delete customersMap[customerId].color;
         delete customersMap[customerId].status_name; // déjà copié dans status
         delete customersMap[customerId].deal_status_name;
       }
